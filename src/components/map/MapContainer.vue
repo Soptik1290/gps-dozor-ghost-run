@@ -26,6 +26,21 @@ const props = defineProps({
     type: Array as PropType<ApiEcoDrivingEvent[]>,
     default: () => [],
   },
+  /** Current Reality Position (for moving dot) */
+  realityCurrentPosition: {
+    type: Object as PropType<ApiHistoryEntry | null>,
+    default: null
+  },
+  /** Current Ghost Position (for moving dot) */
+  ghostCurrentPosition: {
+    type: Object as PropType<ApiHistoryEntry | null>,
+    default: null
+  },
+  /** Lock camera to reality marker */
+  cameraFollowReality: {
+    type: Boolean,
+    default: false
+  },
   /** Center the map on this lat/lng on first load */
   initialCenter: {
     type: Array as PropType<[number, number]>,
@@ -227,7 +242,59 @@ function updateTrailLayers(m: mapboxgl.Map) {
       },
     })
   }
-}
+
+  // ── Moving Markers ──
+  if (props.ghostCurrentPosition) {
+    const p = props.ghostCurrentPosition
+    const geoJson: GeoJSON.FeatureCollection<GeoJSON.Point> = {
+      type: 'FeatureCollection',
+      features: [{
+        type: 'Feature', properties: {},
+        geometry: { type: 'Point', coordinates: [parseFloat(p.Lng), parseFloat(p.Lat)] }
+      }]
+    }
+    if (m.getSource('ghost-marker')) {
+      (m.getSource('ghost-marker') as mapboxgl.GeoJSONSource).setData(geoJson)
+    } else {
+      m.addSource('ghost-marker', { type: 'geojson', data: geoJson })
+      m.addLayer({
+        id: 'ghost-marker-layer', type: 'circle', source: 'ghost-marker',
+        paint: {
+          'circle-radius': 6,
+          'circle-color': '#CCFF00',
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#000000',
+        }
+      })
+    }
+  }
+
+  if (props.realityCurrentPosition) {
+    const p = props.realityCurrentPosition
+    const geoJson: GeoJSON.FeatureCollection<GeoJSON.Point> = {
+      type: 'FeatureCollection',
+      features: [{
+        type: 'Feature', properties: {},
+        geometry: { type: 'Point', coordinates: [parseFloat(p.Lng), parseFloat(p.Lat)] }
+      }]
+    }
+    if (m.getSource('reality-marker')) {
+      (m.getSource('reality-marker') as mapboxgl.GeoJSONSource).setData(geoJson)
+    } else {
+      m.addSource('reality-marker', { type: 'geojson', data: geoJson })
+      m.addLayer({
+        id: 'reality-marker-layer', type: 'circle', source: 'reality-marker',
+        paint: {
+          'circle-radius': 7,
+          'circle-color': '#0033FF',
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#FFFFFF',
+          'circle-opacity': 1,
+        }
+      })
+    }
+  }
+} // End updateTrailLayers
 
 // ── Fit map bounds to trail ──
 function fitToTrail(m: mapboxgl.Map) {
@@ -314,13 +381,61 @@ onMounted(() => {
   map.touchZoomRotate.disableRotation()
 })
 
+// ── Drone Camera Control ──
+let lastRealityCoords: [number, number] | null = null
+
+function calculateBearing(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const dLon = (lon2 - lon1) * Math.PI / 180
+  const y = Math.sin(dLon) * Math.cos(lat2 * Math.PI / 180)
+  const x = Math.cos(lat1 * Math.PI / 180) * Math.sin(lat2 * Math.PI / 180) -
+            Math.sin(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.cos(dLon)
+  let brng = Math.atan2(y, x) * 180 / Math.PI
+  return (brng + 360) % 360
+}
+
 // Watch for prop changes and update layers
 watch(
-  () => [props.realityPositions, props.ghostPositions, props.ecoEvents],
+  () => [
+    props.realityPositions, 
+    props.ghostPositions, 
+    props.ecoEvents, 
+    props.realityCurrentPosition, 
+    props.ghostCurrentPosition,
+    props.cameraFollowReality
+  ],
   () => {
     if (map && map.isStyleLoaded()) {
       updateTrailLayers(map)
-      fitToTrail(map)
+
+      // Drone Camera Tracking
+      if (props.cameraFollowReality && props.realityCurrentPosition) {
+        const curLng = parseFloat(props.realityCurrentPosition.Lng)
+        const curLat = parseFloat(props.realityCurrentPosition.Lat)
+        
+        // Calculate bearing so car points "forward"
+        let bearing = map.getBearing()
+        if (lastRealityCoords) {
+           const newBearing = calculateBearing(lastRealityCoords[1], lastRealityCoords[0], curLat, curLng)
+           // Only update bearing if moving
+           if (Math.abs(lastRealityCoords[0] - curLng) > 0.00001 || Math.abs(lastRealityCoords[1] - curLat) > 0.00001) {
+             bearing = newBearing
+           }
+        }
+        
+        map.easeTo({
+          center: [curLng, curLat],
+          zoom: Math.max(map.getZoom(), 16),
+          pitch: 60,
+          bearing: bearing,
+          duration: Math.max(200, 1000 / 10), // Speed dependent animation logic handled by Mapbox easeTo
+          easing: (t) => t // Linear follow
+        })
+
+        lastRealityCoords = [curLng, curLat]
+      } else if (!props.cameraFollowReality) {
+        // Reset last coords when stopped so we don't snap wildly later
+        lastRealityCoords = null
+      }
     }
   },
   { deep: true }
