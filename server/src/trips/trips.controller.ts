@@ -1,6 +1,8 @@
 import {
     Controller,
     Get,
+    Post,
+    Body,
     Param,
     Query,
     ParseIntPipe,
@@ -32,6 +34,18 @@ export class TripsController {
         );
     }
 
+    @Post('match')
+    @ApiOperation({ summary: 'Find the best historical Ghost trip based on route coordinates' })
+    @ApiResponse({ status: 200, description: 'The best matching trip or null if none found' })
+    async matchGhostTrip(
+        @Body('currentLat') currentLat: number,
+        @Body('currentLng') currentLng: number,
+        @Body('destinationLat') destinationLat: number,
+        @Body('destinationLng') destinationLng: number,
+    ) {
+        return this.tripsService.findMatch(currentLat, currentLng, destinationLat, destinationLng);
+    }
+
     @Get(':id')
     @ApiOperation({ summary: 'Get trip details by ID' })
     findOne(@Param('id', ParseIntPipe) id: number) {
@@ -50,5 +64,17 @@ export class TripsController {
     })
     getReplay(@Param('id', ParseIntPipe) id: number) {
         return this.tripsService.getReplayData(id);
+    }
+
+    @Post(':id/analyze/driver')
+    @ApiOperation({ summary: 'Get AI Context-Aware Tactical Feedback for Driver' })
+    analyzeDriver(@Param('id', ParseIntPipe) id: number) {
+        return this.tripsService.analyzeDriver(id);
+    }
+
+    @Post(':id/analyze/admin')
+    @ApiOperation({ summary: 'Get AI Context-Aware Financial Feedback for Admin' })
+    analyzeAdmin(@Param('id', ParseIntPipe) id: number) {
+        return this.tripsService.analyzeAdmin(id);
     }
 }

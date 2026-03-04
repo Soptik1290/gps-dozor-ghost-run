@@ -80,6 +80,23 @@
             <span class="data-label__value !text-xs text-muted">{{ trip.FuelConsumed.Value.toFixed(1) }} L</span>
           </div>
         </div>
+
+        <!-- Management Summary Action -->
+        <div class="border-t border-panel-border pt-3 mt-3" @click.stop>
+          <button v-if="expandedTripIndex !== index" @click.stop="fetchAdminSummary(index)" class="text-[0.625rem] font-mono text-volt hover:text-primary transition-colors flex items-center gap-1 opacity-80 hover:opacity-100">
+            <Sparkles :size="12" /> GENERATE MANAGEMENT SUMMARY
+          </button>
+          
+          <div v-if="expandedTripIndex === index" class="bg-black/40 border-l-2 border-volt p-3 mt-2 rounded-r">
+             <div class="text-[0.5625rem] font-mono text-volt uppercase tracking-wider mb-2 flex items-center gap-2">
+               MANAGEMENT SUMMARY
+               <span v-if="adminFeedbackLoading" class="animate-pulse text-muted text-[0.5rem]">ANALYZING TELEMETRY...</span>
+             </div>
+             <div class="text-xs font-mono leading-relaxed text-blue-100/90 whitespace-pre-wrap">
+               <span v-if="adminFeedback">{{ adminFeedback }}</span>
+             </div>
+          </div>
+        </div>
       </div>
 
       <!-- Empty state -->
@@ -110,8 +127,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-vue-next'
-import { useTrips } from '@/api/endpoints/trips'
+import { ArrowLeft, ChevronLeft, ChevronRight, Sparkles } from 'lucide-vue-next'
+import { useTrips, analyzeAdmin } from '@/api/endpoints/trips'
 import type { ApiTrip } from '@/api/types'
 
 const route = useRoute()
@@ -194,5 +211,28 @@ function selectTrip(trip: ApiTrip) {
       })
     }, 800)
   }, 1200)
+}
+// ── Admin Feedback State ──
+const expandedTripIndex = ref<number | null>(null)
+const adminFeedback = ref('')
+const adminFeedbackLoading = ref(false)
+
+async function fetchAdminSummary(index: number) {
+  expandedTripIndex.value = index
+  adminFeedback.value = ''
+  adminFeedbackLoading.value = true
+  
+  try {
+    // Note: We use modulo on index to pick a valid seeded DB ID (since external GPS API trips lack our Postgres IDs)
+    const mockDbId = (index % 10) + 1
+    const data = await analyzeAdmin(mockDbId)
+    if (data && data.feedback) {
+      adminFeedback.value = data.feedback
+    }
+  } catch (e) {
+    adminFeedback.value = 'Analysis failed. Check your OpenAI API Key or Backend connection.'
+  } finally {
+    adminFeedbackLoading.value = false
+  }
 }
 </script>

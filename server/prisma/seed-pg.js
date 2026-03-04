@@ -95,11 +95,11 @@ async function main() {
 
         console.log('📍 Generating GHOST REFERENCE TRIP (BMW 740i, pilot_petr)...');
 
-        const insertTrip = async (vId, dId, start, dur, dist, fuel, speed, score, rank, eco) => {
+        const insertTrip = async (vId, dId, start, dur, dist, fuel, speed, score, rank, eco, startLat, startLng, endLat, endLng, destName) => {
             const res = await client.query(
-                `INSERT INTO "Trip" ("vehicleId", "driverId", "startTime", "endTime", "distanceKm", "fuelConsumption", "avgSpeed", score, rank, "ecoEventsCount", "createdAt") 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW()) RETURNING id`,
-                [vId, dId, start, new Date(start.getTime() + dur * 1000), dist, fuel, speed, score, rank, eco]
+                `INSERT INTO "Trip" ("vehicleId", "driverId", "startTime", "endTime", "distanceKm", "fuelConsumption", "avgSpeed", score, rank, "ecoEventsCount", "startLat", "startLng", "endLat", "endLng", "destinationName", "createdAt") 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW()) RETURNING id`,
+                [vId, dId, start, new Date(start.getTime() + dur * 1000), dist, fuel, speed, score, rank, eco, startLat, startLng, endLat, endLng, destName]
             );
             return res.rows[0].id;
         };
@@ -129,19 +129,21 @@ async function main() {
 
         // GHOST 
         const ghostStart = addDays(new Date('2026-02-01T07:00:00Z'), 0);
-        const ghostId = await insertTrip(bmwId, driverPetrId, ghostStart, 35 * 60, 33.8, 6.8, 58.0, 95, 'S', 1);
         const ghostLogs = generatePragueRoute(PRAGUE_LAT, PRAGUE_LNG, ghostStart, 35 * 60, 58);
+        const ghostId = await insertTrip(bmwId, driverPetrId, ghostStart, 35 * 60, 33.8, 6.8, 58.0, 95, 'S', 1, ghostLogs[0].lat, ghostLogs[0].lng, ghostLogs[ghostLogs.length - 1].lat, ghostLogs[ghostLogs.length - 1].lng, 'Prague Warehouse');
         await insertLogs(ghostId, ghostLogs);
 
         // REALITY 1
         const r1Start = addDays(new Date('2026-03-01T07:05:00Z'), 0);
-        const r1Id = await insertTrip(bmwId, driverPetrId, r1Start, 38 * 60, 32.9, 7.4, 52.0, 78, 'B', 4);
-        await insertLogs(r1Id, generatePragueRoute(PRAGUE_LAT, PRAGUE_LNG, r1Start, 38 * 60, 52));
+        const r1Logs = generatePragueRoute(PRAGUE_LAT, PRAGUE_LNG, r1Start, 38 * 60, 52);
+        const r1Id = await insertTrip(bmwId, driverPetrId, r1Start, 38 * 60, 32.9, 7.4, 52.0, 78, 'B', 4, r1Logs[0].lat, r1Logs[0].lng, r1Logs[r1Logs.length - 1].lat, r1Logs[r1Logs.length - 1].lng, 'Prague Warehouse');
+        await insertLogs(r1Id, r1Logs);
 
         // REALITY 2
         const r2Start = addDays(new Date('2026-03-03T07:02:00Z'), 0);
-        const r2Id = await insertTrip(bmwId, driverPetrId, r2Start, 33 * 60, 34.1, 6.2, 62.0, 91, 'A', 2);
-        await insertLogs(r2Id, generatePragueRoute(PRAGUE_LAT + 0.002, PRAGUE_LNG + 0.001, r2Start, 33 * 60, 62));
+        const r2Logs = generatePragueRoute(PRAGUE_LAT + 0.002, PRAGUE_LNG + 0.001, r2Start, 33 * 60, 62);
+        const r2Id = await insertTrip(bmwId, driverPetrId, r2Start, 33 * 60, 34.1, 6.2, 62.0, 91, 'A', 2, r2Logs[0].lat, r2Logs[0].lng, r2Logs[r2Logs.length - 1].lat, r2Logs[r2Logs.length - 1].lng, 'Prague Warehouse');
+        await insertLogs(r2Id, r2Logs);
 
         let totalTr = 3;
         console.log('  🟢 Generating trips for Škoda Octavia...');
@@ -149,8 +151,9 @@ async function main() {
             const ts = addDays(new Date('2026-02-25T08:00:00Z'), day);
             const dur = (28 + Math.random() * 10) * 60;
             const spd = 45 + Math.random() * 20;
-            const tid = await insertTrip(octaviaId, driverJanaId, ts, dur, (spd * dur) / 3600, 5.5, spd, 80, 'B', 2);
-            await insertLogs(tid, generatePragueRoute(PRAGUE_LAT - 0.05 + day * 0.01, PRAGUE_LNG - 0.03 + day * 0.01, ts, dur, spd));
+            const logs = generatePragueRoute(PRAGUE_LAT - 0.05 + day * 0.01, PRAGUE_LNG - 0.03 + day * 0.01, ts, dur, spd);
+            const tid = await insertTrip(octaviaId, driverJanaId, ts, dur, (spd * dur) / 3600, 5.5, spd, 80, 'B', 2, logs[0].lat, logs[0].lng, logs[logs.length - 1].lat, logs[logs.length - 1].lng, 'Client Region ' + day);
+            await insertLogs(tid, logs);
             totalTr++;
         }
 
@@ -159,8 +162,9 @@ async function main() {
             const ts = addDays(new Date('2026-03-01T06:00:00Z'), day);
             const dur = (45 + Math.random() * 15) * 60;
             const spd = 38 + Math.random() * 15;
-            const tid = await insertTrip(transporterId, driverMarekId, ts, dur, (spd * dur) / 3600, 9.0, spd, 70, 'C', 5);
-            await insertLogs(tid, generatePragueRoute(PRAGUE_LAT + 0.08 + day * 0.005, PRAGUE_LNG + 0.04 + day * 0.005, ts, dur, spd));
+            const logs = generatePragueRoute(PRAGUE_LAT + 0.08 + day * 0.005, PRAGUE_LNG + 0.04 + day * 0.005, ts, dur, spd);
+            const tid = await insertTrip(transporterId, driverMarekId, ts, dur, (spd * dur) / 3600, 9.0, spd, 70, 'C', 5, logs[0].lat, logs[0].lng, logs[logs.length - 1].lat, logs[logs.length - 1].lng, 'Depot ' + day);
+            await insertLogs(tid, logs);
             totalTr++;
         }
 

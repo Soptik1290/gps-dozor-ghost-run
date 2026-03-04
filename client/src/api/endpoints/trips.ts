@@ -36,3 +36,39 @@ export function useTrips(
         enabled: () => !!vehicleCode.value && vehicleCode.value !== '_',
     })
 }
+
+/**
+ * Match a historical Ghost trip to a live navigation route.
+ */
+export async function matchGhostTrip(
+    currentLat: number,
+    currentLng: number,
+    destinationLat: number,
+    destinationLng: number
+) {
+    const res = await fetch('http://localhost:3000/trips/match', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentLat, currentLng, destinationLat, destinationLng }),
+    })
+    if (!res.ok) throw new Error('Match failed')
+    return res.json()
+}
+
+/**
+ * Fetch Context-Aware AI Tactical Feedback for Driver
+ */
+export async function analyzeDriver(tripId: number | string) {
+    const res = await fetch(`http://localhost:3000/trips/${tripId}/analyze/driver`, { method: 'POST' })
+    if (!res.ok) throw new Error('Driver analysis failed')
+    return res.json()
+}
+
+/**
+ * Fetch Context-Aware AI Financial Feedback for Admin
+ */
+export async function analyzeAdmin(tripId: number | string) {
+    const res = await fetch(`http://localhost:3000/trips/${tripId}/analyze/admin`, { method: 'POST' })
+    if (!res.ok) throw new Error('Admin analysis failed')
+    return res.json()
+}

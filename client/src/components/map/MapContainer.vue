@@ -43,8 +43,8 @@ const props = defineProps({
   },
   /** Center the map on this lat/lng on first load */
   initialCenter: {
-    type: Array as PropType<[number, number]>,
-    default: () => [14.42, 50.08], // Prague
+    type: Array as unknown as PropType<[number, number]>,
+    default: () => [14.42, 50.08] as [number, number], // Prague
   },
   /** Initial zoom level */
   initialZoom: {

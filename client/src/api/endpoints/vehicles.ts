@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/vue-query'
-import { computed, type Ref } from 'vue'
+import { type Ref } from 'vue'
 import { apiFetch } from '@/api/client'
 import type { ApiVehicle, ApiGroup } from '@/api/types'
 

@@ -4,7 +4,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -71,6 +70,18 @@ model Trip {
   score            Int      @default(0)
   rank             String   @default("F")
   ecoEventsCount   Int      @default(0)
+
+  // Routing Fields
+  startLat         Float?
+  startLng         Float?
+  endLat           Float?
+  endLng           Float?
+  destinationName  String?
+
+  // Context-Aware AI Analysis caching
+  weatherSnapshot  String? // E.g., "Heavy Rain, 4°C"
+  aiDriverFeedback String?
+  aiAdminFeedback  String?
 
   createdAt        DateTime @default(now())
 

@@ -28,15 +28,24 @@
       </RouterView>
     </div>
 
-    <!-- ── Sidebar Helper (lg only, floating top right) ── -->
-    <div v-if="!isFullscreenRoute" class="hidden lg:flex absolute right-6 top-6 flex-col gap-4 w-64 p-5 border border-white/10 bg-[#0A0A0A]/80 backdrop-blur-md rounded-xl z-30 pointer-events-auto shadow-2xl">
-      <h2 class="font-heading text-xl uppercase tracking-widest text-muted">Readme //</h2>
+    <!-- ── Sidebar Helper (lg only, floating top right - ONLY ON LOGIN) ── -->
+    <div v-if="route.name === 'Login'" class="hidden lg:flex absolute right-6 top-6 flex-col gap-4 w-64 p-5 border border-white/10 bg-[#0A0A0A]/80 backdrop-blur-md rounded-xl z-30 pointer-events-auto shadow-2xl">
+      <h2 class="font-heading text-xl uppercase tracking-widest text-muted">Aka. Login //</h2>
       <div class="text-sm font-mono text-muted/70 space-y-2">
-        <p>GPS Dozor: Ghost Run PWA Desktop Client.</p>
-        <div class="bg-black/50 p-3 rounded border border-white/5">
-          <p class="text-[0.65rem] uppercase mb-1">Test Credentials</p>
-          <p><span class="text-white">U:</span> <code class="text-volt">api_gpsdozor</code></p>
-          <p><span class="text-white">P:</span> <code class="text-volt">yakmwlARdn</code></p>
+        <p>GPS Dozor: Ghost Run PWA Pilot Access.</p>
+        
+        <div class="bg-black/50 p-3 rounded border border-white/5 space-y-3">
+          <div>
+            <p class="text-[0.65rem] uppercase mb-1 text-muted">Admin Account</p>
+            <p><span class="text-white/50">U:</span> <code class="text-volt">api_gpsdozor</code></p>
+            <p><span class="text-white/50">P:</span> <code class="text-volt">yakmwlARdn</code></p>
+          </div>
+          
+          <div class="pt-2 border-t border-white/5">
+            <p class="text-[0.65rem] uppercase mb-1 text-muted">Pilot Account (Petr)</p>
+            <p><span class="text-white/50">U:</span> <code class="text-hyper">pilot_petr</code></p>
+            <p><span class="text-white/50">P:</span> <code class="text-hyper">password123</code></p>
+          </div>
         </div>
       </div>
     </div>

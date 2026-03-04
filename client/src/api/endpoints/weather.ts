@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/vue-query'
-import { type Ref, computed } from 'vue'
+import { type Ref } from 'vue'
 import type { WeatherData, TrackStatus } from '@/api/types'
 
 const OPEN_METEO_BASE = 'https://api.open-meteo.com/v1/forecast'

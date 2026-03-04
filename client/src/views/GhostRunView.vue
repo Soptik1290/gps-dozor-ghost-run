@@ -103,9 +103,13 @@
 
       <!-- AI Summary -->
       <div class="bg-black/40 border-l-2 border-primary p-3 mb-6">
-        <div class="text-[0.5rem] font-mono text-primary uppercase tracking-wider mb-1">AI TACTICAL EVALUATION</div>
-        <div class="text-xs font-mono leading-relaxed text-blue-100">
-          "{{ aiComment }}"
+        <div class="text-[0.5rem] font-mono text-primary uppercase tracking-wider mb-1 flex items-center gap-1">
+          RACE CONTROL:
+          <span v-if="aiFeedbackLoading" class="animate-pulse">UPLINKING...</span>
+        </div>
+        <div class="text-xs font-mono leading-relaxed text-blue-100 italic">
+          <span v-if="aiFeedback">"{{ aiFeedback }}"</span>
+          <span v-else-if="!aiFeedbackLoading">"{{ aiComment }}"</span>
         </div>
       </div>
       
@@ -231,6 +235,7 @@ import RaceEngineer from '@/components/hud/RaceEngineer.vue'
 import { useVehicleHistory } from '@/api/endpoints/history'
 import { useEcoDrivingEvents } from '@/api/endpoints/ecoDriving'
 import { useWeather } from '@/api/endpoints/weather'
+import { analyzeDriver } from '@/api/endpoints/trips'
 import { useUiStore } from '@/stores/uiStore'
 import { useGhostRun } from '@/composables/useGhostRun'
 import { useDriverScore } from '@/composables/useDriverScore'
@@ -244,32 +249,135 @@ const vehicleCode = computed(() => route.params.vehicleCode as string)
 const tripFrom = computed(() => (route.query.from as string) || '')
 const tripTo = computed(() => (route.query.to as string) || '')
 
+const destLat = computed(() => route.query.destLat as string)
+const destLng = computed(() => route.query.destLng as string)
+const ghostId = computed(() => route.query.ghostId as string)
+
 const hasMapToken = computed(() => {
   const t = import.meta.env.VITE_MAPBOX_TOKEN
   return !!t && t !== 'pk.placeholder_paste_your_token_here'
 })
 
-// ── Fetch reality history ──
-const { data: historyData, isLoading: historyLoading } = useVehicleHistory(
+// ── Ghost Data Fetch ──
+const fetchedGhostPositions = ref<ApiHistoryEntry[]>([])
+
+// ── Smart Navigation Reality (Mapbox) ──
+const mapboxRealityPositions = ref<ApiHistoryEntry[]>([])
+
+// ── Fetch reality history (Legacy mode if no navigation destination) ──
+const { data: historyData, isLoading: historyLoadingRef } = useVehicleHistory(
   vehicleCode,
   tripFrom,
   tripTo
 )
 
-const realityPositions = computed<ApiHistoryEntry[]>(
-  () => historyData.value?.Positions ?? []
-)
+// ── Polyline Decoder Helper ──
+function decodePolyline(str: string, precision: number = 5) {
+    let index = 0, lat = 0, lng = 0, coordinates = [], shift = 0, result = 0, byte = null, lat_change, lng_change, factor = Math.pow(10, precision);
+    while (index < str.length) {
+        byte = null; shift = 0; result = 0;
+        do {
+            byte = str.charCodeAt(index++) - 63;
+            result |= (byte & 0x1f) << shift;
+            shift += 5;
+        } while (byte >= 0x20);
+        lat_change = ((result & 1) ? ~(result >> 1) : (result >> 1));
+        shift = result = 0;
+        do {
+            byte = str.charCodeAt(index++) - 63;
+            result |= (byte & 0x1f) << shift;
+            shift += 5;
+        } while (byte >= 0x20);
+        lng_change = ((result & 1) ? ~(result >> 1) : (result >> 1));
+        lat += lat_change; lng += lng_change;
+        coordinates.push([lat / factor, lng / factor]);
+    }
+    return coordinates;
+}
 
-// ── Mock Ghost Data for Demo ──
-// We'll shift the reality positions slightly to simulate a slightly different past run
+// ── Synthesize GPS logs from Mapbox Directions ──
+async function fetchSmartNavigationRoute() {
+  if (!destLat.value || !destLng.value || !hasMapToken.value) return
+  
+  const startLn = 14.4378; const startLt = 50.0755; // DB Default Start
+  const endLn = parseFloat(destLng.value); const endLt = parseFloat(destLat.value);
+  
+  const token = import.meta.env.VITE_MAPBOX_TOKEN
+  const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${startLn},${startLt};${endLn},${endLt}?access_token=${token}&geometries=polyline&overview=full`
+  
+  try {
+    const res = await fetch(url)
+    const json = await res.json()
+    if (json.routes && json.routes.length > 0) {
+      const route = json.routes[0]
+      const coords = decodePolyline(route.geometry, 5) // Mapbox uses precision 5 for driving
+      
+      const speedKmh = 50 // assumed speed
+      const speedMs = speedKmh / 3.6
+      let currentTime = new Date().getTime()
+      
+      const syn: ApiHistoryEntry[] = []
+      // Initial point
+      syn.push({
+        Lat: coords[0][0].toString(), Lng: coords[0][1].toString(),
+        Speed: speedKmh, Time: new Date(currentTime).toISOString()
+      })
+      
+      // Calculate distances to synthesize timestamps
+      for (let i = 1; i < coords.length; i++) {
+        // basic distance in degrees * approx to meters
+        const dLat = coords[i][0] - coords[i-1][0]
+        const dLng = coords[i][1] - coords[i-1][1]
+        const distM = Math.sqrt(dLat*dLat + dLng*dLng) * 111320
+        
+        const timeDeltaMs = (distM / speedMs) * 1000
+        currentTime += timeDeltaMs
+        
+        syn.push({
+          Lat: coords[i][0].toString(), Lng: coords[i][1].toString(),
+          Speed: speedKmh, Time: new Date(currentTime).toISOString()
+        })
+      }
+      mapboxRealityPositions.value = syn
+    }
+  } catch(e) { console.error('Mapbox Directions error', e) }
+}
+
+async function fetchGhostReplay() {
+  if (!ghostId.value) return
+  try {
+    const res = await fetch(`http://localhost:3000/trips/${ghostId.value}/replay`)
+    const json = await res.json()
+    if (json.positions) {
+      fetchedGhostPositions.value = json.positions
+    }
+  } catch(e) { console.error('Ghost replay error', e) }
+}
+
+watch([destLat, destLng, ghostId], () => {
+  fetchSmartNavigationRoute()
+  fetchGhostReplay()
+}, { immediate: true })
+
+const realityPositions = computed<ApiHistoryEntry[]>(() => {
+  if (mapboxRealityPositions.value.length > 0) return mapboxRealityPositions.value
+  return historyData.value?.Positions ?? []
+})
+
 const ghostPositions = computed<ApiHistoryEntry[]>(() => {
+  if (fetchedGhostPositions.value.length > 0) return fetchedGhostPositions.value
+  
+  // Demo fallback
   if (realityPositions.value.length === 0) return []
   return realityPositions.value.map((p, idx) => ({
     ...p,
-    // Shift the timestamp slightly so delta isn't perfectly 0
-    // Simulating the ghost being slightly faster at the start, then slower
     Time: new Date(new Date(p.Time).getTime() - (Math.sin(idx / 10) * 5000)).toISOString(),
   }))
+})
+
+const historyLoading = computed(() => {
+  if (destLat.value) return mapboxRealityPositions.value.length === 0
+  return historyLoadingRef.value
 })
 
 // ── Eco-Driving Events ──
@@ -325,6 +433,23 @@ const {
 const { score, tier, tierLabel, timeLossSeconds, aiComment, ecoIncidentCount } = useDriverScore(timeDelta, ecoEventsRef)
 
 const showDebrief = ref(true)
+const aiFeedback = ref('')
+const aiFeedbackLoading = ref(false)
+
+async function fetchAiDebrief() {
+  if (!ghostId.value) return
+  aiFeedbackLoading.value = true
+  try {
+    const data = await analyzeDriver(ghostId.value)
+    if (data && data.feedback) {
+      aiFeedback.value = data.feedback
+    }
+  } catch (e) {
+    console.error('Failed to fetch AI debrief', e)
+  } finally {
+    aiFeedbackLoading.value = false
+  }
+}
 
 watch(isPlaying, (playing) => {
   if (playing) showDebrief.value = false
@@ -333,8 +458,16 @@ watch(isPlaying, (playing) => {
 watch(progressPercent, (pct) => {
   if (pct >= 100 && historyData.value?.Positions?.length && historyData.value.Positions.length > 2) {
     showDebrief.value = true
+    if (!aiFeedback.value) fetchAiDebrief()
   }
 })
+
+// Initial load check if we start at 100% or just showing debrief
+watch([showDebrief, ghostId], ([showing, gId]) => {
+  if (showing && gId && !aiFeedback.value && !aiFeedbackLoading.value) {
+    fetchAiDebrief()
+  }
+}, { immediate: true })
 
 // Sliced trail for animation playback
 const animatedRealityPositions = computed(() => {
