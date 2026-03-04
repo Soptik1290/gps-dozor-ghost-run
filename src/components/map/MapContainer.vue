@@ -242,8 +242,10 @@ function updateTrailLayers(m: mapboxgl.Map) {
       },
     })
   }
+} // End updateTrailLayers
 
-  // ── Moving Markers ──
+// ── Moving Markers ──
+function updateMarkers(m: mapboxgl.Map) {
   if (props.ghostCurrentPosition) {
     const p = props.ghostCurrentPosition
     const geoJson: GeoJSON.FeatureCollection<GeoJSON.Point> = {
@@ -294,7 +296,7 @@ function updateTrailLayers(m: mapboxgl.Map) {
       })
     }
   }
-} // End updateTrailLayers
+}
 
 // ── Fit map bounds to trail ──
 function fitToTrail(m: mapboxgl.Map) {
@@ -383,6 +385,7 @@ onMounted(() => {
 
 // ── Drone Camera Control ──
 let lastRealityCoords: [number, number] | null = null
+let smoothBearing = 0
 
 function calculateBearing(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const dLon = (lon2 - lon1) * Math.PI / 180
@@ -393,47 +396,62 @@ function calculateBearing(lat1: number, lon1: number, lat2: number, lon2: number
   return (brng + 360) % 360
 }
 
-// Watch for prop changes and update layers
+// Watch for base trail changes (only happens when trip is selected or animated reality trail chunk adds a point)
 watch(
   () => [
     props.realityPositions, 
     props.ghostPositions, 
-    props.ecoEvents, 
+    props.ecoEvents
+  ],
+  () => {
+    if (map && map.isStyleLoaded()) {
+      updateTrailLayers(map)
+    }
+  },
+  { deep: true }
+)
+
+// Watch for frame-by-frame 60fps moving markers
+watch(
+  () => [
     props.realityCurrentPosition, 
     props.ghostCurrentPosition,
     props.cameraFollowReality
   ],
   () => {
     if (map && map.isStyleLoaded()) {
-      updateTrailLayers(map)
+      updateMarkers(map)
 
-      // Drone Camera Tracking
+      // Drone Camera Tracking (smooth follow)
       if (props.cameraFollowReality && props.realityCurrentPosition) {
         const curLng = parseFloat(props.realityCurrentPosition.Lng)
         const curLat = parseFloat(props.realityCurrentPosition.Lat)
         
-        // Calculate bearing so car points "forward"
-        let bearing = map.getBearing()
+        // Calculate bearing with low-pass filter
         if (lastRealityCoords) {
-           const newBearing = calculateBearing(lastRealityCoords[1], lastRealityCoords[0], curLat, curLng)
-           // Only update bearing if moving
-           if (Math.abs(lastRealityCoords[0] - curLng) > 0.00001 || Math.abs(lastRealityCoords[1] - curLat) > 0.00001) {
-             bearing = newBearing
+           const dist = Math.sqrt(Math.pow(lastRealityCoords[0] - curLng, 2) + Math.pow(lastRealityCoords[1] - curLat, 2))
+           if (dist > 0.00005) { // Update target bearing only when moving significantly
+             const targetBearing = calculateBearing(lastRealityCoords[1], lastRealityCoords[0], curLat, curLng)
+             let diff = targetBearing - smoothBearing
+             while (diff > 180) diff -= 360
+             while (diff < -180) diff += 360
+             smoothBearing += diff * 0.1 // 10% interpolation factor
+             lastRealityCoords = [curLng, curLat]
            }
+        } else {
+           lastRealityCoords = [curLng, curLat]
+           smoothBearing = map.getBearing()
         }
         
-        map.easeTo({
+        // Because props change 60 times a second, we just jump instantly.
+        map.jumpTo({
           center: [curLng, curLat],
           zoom: Math.max(map.getZoom(), 16),
           pitch: 60,
-          bearing: bearing,
-          duration: Math.max(200, 1000 / 10), // Speed dependent animation logic handled by Mapbox easeTo
-          easing: (t) => t // Linear follow
+          bearing: smoothBearing
         })
 
-        lastRealityCoords = [curLng, curLat]
       } else if (!props.cameraFollowReality) {
-        // Reset last coords when stopped so we don't snap wildly later
         lastRealityCoords = null
       }
     }

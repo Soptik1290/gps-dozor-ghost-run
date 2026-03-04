@@ -94,13 +94,13 @@ const sizeClass = computed(() => {
 
 const valueClass = computed(() => {
   if (isLeading.value) return 'text-volt text-glow-volt'
-  if (isLagging.value) return 'text-danger'
+  if (isLagging.value) return 'text-white drop-shadow-md'
   return 'text-primary'
 })
 
 const signClass = computed(() => {
   if (isLeading.value) return 'text-volt'
-  if (isLagging.value) return 'text-danger'
+  if (isLagging.value) return 'text-white/80'
   return 'text-muted'
 })
 

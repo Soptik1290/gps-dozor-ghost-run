@@ -48,7 +48,7 @@
     </header>
 
     <!-- ── Manual AI Trigger (Floating Right) ── -->
-    <div class="absolute top-16 right-4 z-20 pointer-events-auto">
+    <div class="absolute top-[80px] right-4 z-30 pointer-events-auto">
       <button 
         @click="triggerRaceEngineer" 
         :disabled="isThinking || historyLoading"
@@ -119,7 +119,7 @@
          style="padding-bottom: env(safe-area-inset-bottom);">
       
       <!-- Delta Widget (Floats above panel) -->
-      <div class="absolute -top-16 left-1/2 -translate-x-1/2 w-48 shadow-lg shadow-black/50">
+      <div class="absolute -top-[76px] left-1/2 -translate-x-1/2 w-48 shadow-lg shadow-black/50 z-30">
         <DeltaWidget
           class="glass-panel"
           :delta="timeDelta"
@@ -129,7 +129,7 @@
         />
       </div>
 
-      <div class="glass-panel border-t border-panel-border pt-4">
+      <div class="glass-panel border-t border-panel-border pt-4 relative z-20">
         <!-- Speed & Distance -->
         <div class="grid grid-cols-2 gap-0 px-4 py-3 border-b border-surface">
           <div class="data-label text-center">
@@ -174,7 +174,7 @@
     </div>
 
     <!-- ── Ghost/Reality Legend ── -->
-    <div class="absolute top-[72px] right-3 z-10 glass-panel p-2 space-y-1.5 pointer-events-none">
+    <div class="absolute top-[160px] right-3 z-10 glass-panel p-2 space-y-1.5 pointer-events-none">
       <div class="flex items-center gap-2 text-[0.5625rem] font-mono">
         <div class="w-2 h-2 rounded-full border border-black bg-[#CCFF00]" />
         <span class="text-muted">GHOST</span>

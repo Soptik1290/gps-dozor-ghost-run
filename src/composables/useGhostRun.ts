@@ -53,6 +53,45 @@ function interpolateTime(positions: ApiHistoryEntry[], fracIndex: number): numbe
 }
 
 // ═══════════════════════════════════════
+// Interpolate position by exact timestamp
+// ═══════════════════════════════════════
+function interpolatePositionByTime(positions: ApiHistoryEntry[], targetTimeMs: number): ApiHistoryEntry | null {
+    if (positions.length === 0) return null
+
+    let idx1 = 0
+    let idx2 = 0
+
+    for (let i = 0; i < positions.length - 1; i++) {
+        const t1 = new Date(positions[i].Time).getTime()
+        const t2 = new Date(positions[i + 1].Time).getTime()
+        if (targetTimeMs >= t1 && targetTimeMs <= t2) {
+            idx1 = i
+            idx2 = i + 1
+            break
+        } else if (targetTimeMs < t1 && i === 0) {
+            return positions[0]
+        }
+    }
+
+    if (idx1 === idx2) return positions[positions.length - 1]
+
+    const t1 = new Date(positions[idx1].Time).getTime()
+    const t2 = new Date(positions[idx2].Time).getTime()
+    const frac = (t2 - t1) === 0 ? 0 : (targetTimeMs - t1) / (t2 - t1)
+
+    const lat1 = parseFloat(positions[idx1].Lat)
+    const lng1 = parseFloat(positions[idx1].Lng)
+    const lat2 = parseFloat(positions[idx2].Lat)
+    const lng2 = parseFloat(positions[idx2].Lng)
+
+    return {
+        ...positions[idx1],
+        Lat: (lat1 + frac * (lat2 - lat1)).toFixed(6),
+        Lng: (lng1 + frac * (lng2 - lng1)).toFixed(6)
+    }
+}
+
+// ═══════════════════════════════════════
 // Rolling Average Smoother
 // Prevents delta from flickering
 // ═══════════════════════════════════════
@@ -88,18 +127,37 @@ export function useGhostRun(
 ) {
     const smoother = new RollingAverage(5)
 
-    // Current "playback" index in the reality trail
-    const currentIndex = ref(0)
+    // Current "playback" time in MS from the start of the trip
+    const currentPlaybackTimeMs = ref(0)
+    let lastFrameTime = 0
+    let rafId: number | null = null
+
+    // Compute the index corresponding to currentPlaybackTimeMs
+    const currentIndex = computed(() => {
+        if (realityPositions.value.length === 0) return 0
+        const startMs = new Date(realityPositions.value[0].Time).getTime()
+        const targetMs = startMs + currentPlaybackTimeMs.value
+
+        let idx = 0
+        for (let i = 0; i < realityPositions.value.length; i++) {
+            if (new Date(realityPositions.value[i].Time).getTime() <= targetMs) {
+                idx = i
+            } else {
+                break
+            }
+        }
+        return idx
+    })
 
     // Smoothed time delta in seconds (negative = leading, positive = lagging)
     const timeDelta = ref(0)
     const rawTimeDelta = ref(0)
 
-    // Current position (the "car" on the reality trail)
+    // Current position (smoothly interpolated "car" on the reality trail)
     const currentPosition = computed(() => {
         if (realityPositions.value.length === 0) return null
-        const idx = Math.min(currentIndex.value, realityPositions.value.length - 1)
-        return realityPositions.value[idx]
+        const startMs = new Date(realityPositions.value[0].Time).getTime()
+        return interpolatePositionByTime(realityPositions.value, startMs + currentPlaybackTimeMs.value)
     })
 
     // Current speed from reality trail
@@ -191,11 +249,10 @@ export function useGhostRun(
     })
 
     // ── Simulation State ──
-    let playbackTimer: ReturnType<typeof setTimeout> | null = null
     const isPlaying = ref(false)
     const playbackSpeed = ref(10) // 1x, 10x, 50x
 
-    // ── Compute delta when currentIndex changes ──
+    // ── Compute delta when currentPlaybackTimeMs changes ──
     function computeDelta() {
         if (
             ghostPositions.value.length < 2 ||
@@ -211,7 +268,7 @@ export function useGhostRun(
         const pos = currentPosition.value
         if (!pos) return
 
-        // Find the distance along reality trail at current index
+        // Find the distance along reality trail at current interpolated index
         const realityDist = realityDistances.value[
             Math.min(currentIndex.value, realityDistances.value.length - 1)
         ]
@@ -233,7 +290,10 @@ export function useGhostRun(
 
         // Get timestamp of ghost at that point
         const ghostTimeMs = interpolateTime(ghostPositions.value, ghostFracIdx)
-        const realityTimeMs = new Date(pos.Time).getTime()
+
+        // Exact reality timestamp interpolated
+        const realityStartMs = new Date(realityPositions.value[0].Time).getTime()
+        const realityTimeMs = realityStartMs + currentPlaybackTimeMs.value
 
         // Delta = reality_time - ghost_time at same distance
         const rawDelta = (realityTimeMs - ghostTimeMs) / 1000
@@ -241,89 +301,69 @@ export function useGhostRun(
         timeDelta.value = Math.round(smoother.push(rawDelta))
     }
 
-    // ── Compute Synchronized Ghost Position ──
-    // Finds the physical coordinate of the ghost at the exact same elapsed time as reality
-    const currentGhostPosition = computed(() => {
-        if (realityPositions.value.length === 0 || ghostPositions.value.length === 0) return null
-
-        const realityStartMs = new Date(realityPositions.value[0].Time).getTime()
-        const currentRealityMs = new Date(realityPositions.value[currentIndex.value].Time).getTime()
-        const elapsedMs = currentRealityMs - realityStartMs
-
-        const ghostStartMs = new Date(ghostPositions.value[0].Time).getTime()
-        const targetGhostMs = ghostStartMs + elapsedMs
-
-        // Find which two ghost points surround this target time
-        const gp = ghostPositions.value
-        let fracIdx = gp.length - 1
-
-        for (let i = 0; i < gp.length - 1; i++) {
-            const t1 = new Date(gp[i].Time).getTime()
-            const t2 = new Date(gp[i + 1].Time).getTime()
-            if (targetGhostMs >= t1 && targetGhostMs <= t2) {
-                const frac = (t2 - t1) === 0 ? 0 : (targetGhostMs - t1) / (t2 - t1)
-                fracIdx = i + frac
-                break
-            } else if (targetGhostMs < t1 && i === 0) {
-                fracIdx = 0
-                break
-            }
-        }
-
-        const i = Math.floor(fracIdx)
-        const frac = fracIdx - i
-        if (i >= gp.length - 1) return gp[gp.length - 1]
-
-        const lat1 = parseFloat(gp[i].Lat), lng1 = parseFloat(gp[i].Lng)
-        const lat2 = parseFloat(gp[i + 1].Lat), lng2 = parseFloat(gp[i + 1].Lng)
-
-        return {
-            ...gp[i],
-            Lat: (lat1 + frac * (lat2 - lat1)).toFixed(6),
-            Lng: (lng1 + frac * (lng2 - lng1)).toFixed(6)
+    // React to playback time changes to compute delta often
+    watch(currentPlaybackTimeMs, () => {
+        if (isPlaying.value) {
+            computeDelta()
         }
     })
 
-    // ── Simulate playback (advance through reality positions over time) ──
-    function playbackLoop() {
+    // ── Compute Synchronized Ghost Position ──
+    const currentGhostPosition = computed(() => {
+        if (realityPositions.value.length === 0 || ghostPositions.value.length === 0) return null
+        const ghostStartMs = new Date(ghostPositions.value[0].Time).getTime()
+        return interpolatePositionByTime(ghostPositions.value, ghostStartMs + currentPlaybackTimeMs.value)
+    })
+
+    // ── Simulate playback (advance through reality positions smoothly) ──
+    function playbackLoop(timestamp: number) {
         if (!isPlaying.value) return
 
-        if (currentIndex.value < realityPositions.value.length - 1) {
-            const currentMs = new Date(realityPositions.value[currentIndex.value].Time).getTime()
-            const nextMs = new Date(realityPositions.value[currentIndex.value + 1].Time).getTime()
+        if (!lastFrameTime) lastFrameTime = timestamp
+        const deltaMs = timestamp - lastFrameTime
+        lastFrameTime = timestamp
 
-            // Time to wait before moving to next point (scaled by playbackSpeed)
-            let delayMs = Math.max(16, (nextMs - currentMs) / playbackSpeed.value)
-            // Clamp huge gaps
-            if (delayMs > 2000) delayMs = 2000
+        // Cap HUGE delta frames (e.g. tab goes to background)
+        const frameStepMs = Math.min(deltaMs, 100) * playbackSpeed.value
+        currentPlaybackTimeMs.value += frameStepMs
 
-            playbackTimer = setTimeout(() => {
-                currentIndex.value++
-                computeDelta()
-                playbackLoop()
-            }, delayMs)
-        } else {
+        const firstTime = new Date(realityPositions.value[0].Time).getTime()
+        const lastTime = new Date(realityPositions.value[realityPositions.value.length - 1].Time).getTime()
+        const totalDurationMs = lastTime - firstTime
+
+        if (currentPlaybackTimeMs.value >= totalDurationMs) {
+            currentPlaybackTimeMs.value = totalDurationMs
+            computeDelta()
             stopPlayback()
             triggerRaceEngineer() // Final trigger
+        } else {
+            rafId = requestAnimationFrame(playbackLoop)
         }
     }
 
     function startPlayback() {
         stopPlayback()
         isPlaying.value = true
-        if (currentIndex.value >= realityPositions.value.length - 1) {
-            currentIndex.value = 0
+
+        if (realityPositions.value.length < 2) return
+        const firstTime = new Date(realityPositions.value[0].Time).getTime()
+        const lastTime = new Date(realityPositions.value[realityPositions.value.length - 1].Time).getTime()
+        const totalDurationMs = lastTime - firstTime
+
+        if (currentPlaybackTimeMs.value >= totalDurationMs) {
+            currentPlaybackTimeMs.value = 0
             smoother.reset()
         }
-        computeDelta()
-        playbackLoop()
+
+        lastFrameTime = 0
+        rafId = requestAnimationFrame(playbackLoop)
     }
 
     function stopPlayback() {
         isPlaying.value = false
-        if (playbackTimer) {
-            clearTimeout(playbackTimer)
-            playbackTimer = null
+        if (rafId) {
+            cancelAnimationFrame(rafId)
+            rafId = null
         }
     }
 
@@ -336,7 +376,9 @@ export function useGhostRun(
     function skipToEnd() {
         stopPlayback()
         if (realityPositions.value.length > 0) {
-            currentIndex.value = realityPositions.value.length - 1
+            const firstTime = new Date(realityPositions.value[0].Time).getTime()
+            const lastTime = new Date(realityPositions.value[realityPositions.value.length - 1].Time).getTime()
+            currentPlaybackTimeMs.value = lastTime - firstTime
             computeDelta()
             triggerRaceEngineer()
         }

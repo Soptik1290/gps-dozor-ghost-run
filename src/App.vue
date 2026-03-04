@@ -29,7 +29,7 @@
     </div>
 
     <!-- ── Sidebar Helper (lg only, floating top right) ── -->
-    <div class="hidden lg:flex absolute right-6 top-6 flex-col gap-4 w-64 p-5 border border-white/10 bg-[#0A0A0A]/80 backdrop-blur-md rounded-xl z-30 pointer-events-auto shadow-2xl">
+    <div v-if="!isFullscreenRoute" class="hidden lg:flex absolute right-6 top-6 flex-col gap-4 w-64 p-5 border border-white/10 bg-[#0A0A0A]/80 backdrop-blur-md rounded-xl z-30 pointer-events-auto shadow-2xl">
       <h2 class="font-heading text-xl uppercase tracking-widest text-muted">Readme //</h2>
       <div class="text-sm font-mono text-muted/70 space-y-2">
         <p>GPS Dozor: Ghost Run PWA Desktop Client.</p>
@@ -42,12 +42,13 @@
     </div>
 
     <!-- ── Bottom Navigation (only when authenticated) ── -->
-    <BottomNav v-if="auth.isAuthenticated" class="z-50 shrink-0" />
+    <BottomNav v-if="auth.isAuthenticated && !isFullscreenRoute" class="z-50 shrink-0" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { RouterView } from 'vue-router'
+import { computed } from 'vue'
+import { RouterView, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { useUiStore } from '@/stores/uiStore'
 import NoiseOverlay from '@/components/ui/NoiseOverlay.vue'
@@ -55,6 +56,9 @@ import BottomNav from '@/components/layout/BottomNav.vue'
 
 const auth = useAuthStore()
 const ui = useUiStore()
+const route = useRoute()
+
+const isFullscreenRoute = computed(() => route.name === 'GhostRun')
 </script>
 
 <style>
