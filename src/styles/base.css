@@ -1,0 +1,342 @@
+@import "tailwindcss";
+
+@theme {
+  /* ── Void / Background ── */
+  --color-void: #050505;
+  --color-surface: #0a0a0a;
+  --color-panel: rgba(255, 255, 255, 0.03);
+  --color-panel-hover: rgba(255, 255, 255, 0.06);
+  --color-panel-border: rgba(255, 255, 255, 0.06);
+
+  /* ── Accent Colors ── */
+  --color-volt: #CCFF00;
+  --color-volt-dim: rgba(204, 255, 0, 0.15);
+  --color-hyper: #0033FF;
+  --color-hyper-dim: rgba(0, 51, 255, 0.15);
+  --color-danger: #FF3333;
+  --color-danger-dim: rgba(255, 51, 51, 0.15);
+  --color-warning: #FF9900;
+
+  /* ── Text ── */
+  --color-primary: #FFFFFF;
+  --color-muted: #888888;
+  --color-dim: #444444;
+
+  /* ── Typography ── */
+  --font-display: 'Oswald', 'Impact', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* ══════════════════════════════════════
+   GLOBAL RESET & BASE
+   ══════════════════════════════════════ */
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: var(--font-mono);
+  background-color: var(--color-void);
+  color: var(--color-primary);
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* Safe area padding for notch devices */
+#app {
+  min-height: 100dvh;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ══════════════════════════════════════
+   NOISE OVERLAY — Film Grain Effect
+   ══════════════════════════════════════ */
+
+.noise-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+}
+
+.noise-overlay svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* ══════════════════════════════════════
+   GLASS PANEL
+   ══════════════════════════════════════ */
+
+.glass-panel {
+  background: var(--color-panel);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border: 1px solid var(--color-panel-border);
+  border-radius: 0;
+}
+
+.glass-panel--hover:hover {
+  background: var(--color-panel-hover);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ══════════════════════════════════════
+   NEON GLOW EFFECTS
+   ══════════════════════════════════════ */
+
+.glow-volt {
+  box-shadow:
+    0 0 4px rgba(204, 255, 0, 0.4),
+    0 0 16px rgba(204, 255, 0, 0.2),
+    0 0 48px rgba(204, 255, 0, 0.1);
+}
+
+.glow-hyper {
+  box-shadow:
+    0 0 4px rgba(0, 51, 255, 0.4),
+    0 0 16px rgba(0, 51, 255, 0.2),
+    0 0 48px rgba(0, 51, 255, 0.1);
+}
+
+.glow-danger {
+  box-shadow:
+    0 0 4px rgba(255, 51, 51, 0.4),
+    0 0 16px rgba(255, 51, 51, 0.2),
+    0 0 48px rgba(255, 51, 51, 0.1);
+}
+
+.text-glow-volt {
+  text-shadow:
+    0 0 8px rgba(204, 255, 0, 0.6),
+    0 0 24px rgba(204, 255, 0, 0.3);
+}
+
+.text-glow-hyper {
+  text-shadow:
+    0 0 8px rgba(0, 51, 255, 0.6),
+    0 0 24px rgba(0, 51, 255, 0.3);
+}
+
+/* ══════════════════════════════════════
+   SCANLINE CRT EFFECT
+   ══════════════════════════════════════ */
+
+.scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+  z-index: 1;
+}
+
+/* ══════════════════════════════════════
+   SCROLL FADE MASK
+   ══════════════════════════════════════ */
+
+.scroll-fade {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 6%,
+    black 94%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 6%,
+    black 94%,
+    transparent 100%
+  );
+}
+
+/* ══════════════════════════════════════
+   HEADING UTILITY — Oswald Condensed
+   ══════════════════════════════════════ */
+
+.heading {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  line-height: 1.1;
+}
+
+/* ══════════════════════════════════════
+   DATA LABEL — stacked key/value
+   ══════════════════════════════════════ */
+
+.data-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.data-label__key {
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-muted);
+}
+
+.data-label__value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ══════════════════════════════════════
+   BUTTON PRIMITIVES
+   ══════════════════════════════════════ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 14px 24px;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 48px;
+  min-width: 48px;
+}
+
+.btn--volt {
+  background: var(--color-volt);
+  color: var(--color-void);
+}
+
+.btn--volt:hover {
+  box-shadow:
+    0 0 4px rgba(204, 255, 0, 0.4),
+    0 0 16px rgba(204, 255, 0, 0.2),
+    0 0 48px rgba(204, 255, 0, 0.1);
+}
+
+.btn--volt:active {
+  transform: scale(0.97);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--color-primary);
+  border: 1px solid var(--color-panel-border);
+}
+
+.btn--ghost:hover {
+  background: var(--color-panel-hover);
+  border-color: var(--color-volt);
+  color: var(--color-volt);
+}
+
+/* ══════════════════════════════════════
+   HUD BADGE — small status pill
+   ══════════════════════════════════════ */
+
+.hud-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 4px 10px;
+  border-radius: 0;
+}
+
+.hud-badge--dry {
+  background: var(--color-volt-dim);
+  color: var(--color-volt);
+  border: 1px solid rgba(204, 255, 0, 0.2);
+}
+
+.hud-badge--wet {
+  background: var(--color-hyper-dim);
+  color: #66AAFF;
+  border: 1px solid rgba(0, 51, 255, 0.2);
+}
+
+.hud-badge--icy {
+  background: rgba(0, 255, 255, 0.1);
+  color: #00FFFF;
+  border: 1px solid rgba(0, 255, 255, 0.2);
+}
+
+.hud-badge--storm {
+  background: var(--color-danger-dim);
+  color: var(--color-danger);
+  border: 1px solid rgba(255, 51, 51, 0.2);
+}
+
+/* ══════════════════════════════════════
+   PULSE ANIMATION — for live indicators
+   ══════════════════════════════════════ */
+
+@keyframes pulse-neon {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(204, 255, 0, 0.3), 0 0 16px rgba(204, 255, 0, 0.15); }
+  50% { box-shadow: 0 0 8px rgba(204, 255, 0, 0.5), 0 0 32px rgba(204, 255, 0, 0.25); }
+}
+
+.animate-pulse-neon {
+  animation: pulse-neon 2s ease-in-out infinite;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+/* ══════════════════════════════════════
+   SCROLLBAR — Minimal dark
+   ══════════════════════════════════════ */
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-dim);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted);
+}
