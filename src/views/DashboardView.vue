@@ -9,6 +9,9 @@
         <h1 class="heading text-lg text-primary">
           {{ activeGroup?.Name || 'SCANNING...' }}
         </h1>
+        <div class="text-muted text-xs font-mono mt-1">
+          Select a vehicle to view telemetry
+        </div>
       </div>
       <div class="flex items-center gap-2">
         <span
@@ -54,7 +57,7 @@
     <div v-else-if="vehiclesError" class="px-4 py-8 text-center">
       <div class="text-danger text-sm font-mono mb-2">SIGNAL LOST</div>
       <div class="text-muted text-xs font-mono">{{ (vehiclesError as Error).message }}</div>
-      <button @click="vehiclesRefetch" class="btn btn--ghost mt-4 text-xs">RETRY</button>
+      <button @click="() => vehiclesRefetch()" class="btn btn--ghost mt-4 text-xs">RETRY</button>
     </div>
 
     <!-- ── Vehicle List ── -->

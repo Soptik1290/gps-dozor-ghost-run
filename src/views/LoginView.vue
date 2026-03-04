@@ -73,9 +73,9 @@
       <button
         type="submit"
         :disabled="isLoading"
-        class="btn btn--volt w-full mt-6 relative overflow-hidden"
+        class="btn btn--volt w-full mt-6 relative overflow-hidden bg-white/5 hover:bg-white/10"
       >
-        <span v-if="!isLoading">INITIALIZE</span>
+        <span v-if="!isLoading">LOGIN TO GPS DOZOR</span>
         <span v-else class="animate-pulse-neon">CONNECTING...</span>
       </button>
 
@@ -87,7 +87,7 @@
 
     <!-- ── Version footer ── -->
     <div class="absolute bottom-6 text-dim text-[0.5625rem] font-mono uppercase tracking-widest">
-      v0.1.0 // GHOST_RUN::INIT
+      v0.1.0 // ENTER DASHBOARD
     </div>
   </div>
 </template>
@@ -103,8 +103,8 @@ const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
 
-const username = ref('')
-const password = ref('')
+const username = ref('api_gpsdozor')
+const password = ref('yakmwlARdn')
 const error = ref('')
 const isLoading = ref(false)
 

@@ -163,14 +163,11 @@
 
     <!-- ── No Trip Selected ── -->
     <div v-if="!tripFrom && hasMapToken && !historyLoading"
-         class="absolute inset-0 z-30 bg-void/70 flex items-center justify-center">
-      <div class="text-center glass-panel p-6 max-w-xs">
-        <div class="heading text-lg text-primary mb-2">NO ROUTE LOADED</div>
-        <div class="text-muted text-xs font-mono leading-relaxed mb-4">
-          Select a trip from the Trip Log to render the ghost trail.
-        </div>
-        <button @click="router.push(`/trips/${vehicleCode}`)" class="btn btn--volt text-xs">
-          OPEN TRIP LOG
+         class="absolute inset-0 z-30 bg-void/80 flex items-center justify-center backdrop-blur-sm">
+      <div class="text-center p-6 flex flex-col items-center">
+        <button @click="router.push(`/trips/${vehicleCode}`)" 
+                class="btn btn--volt text-lg py-4 px-8 tracking-widest animate-pulse-neon shadow-lg hover:scale-105 transition-transform bg-white/5">
+          SELECT TRIP TO START
         </button>
       </div>
     </div>
