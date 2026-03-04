@@ -17,7 +17,7 @@
                     flex items-center justify-between pointer-events-auto"
             style="padding-top: env(safe-area-inset-top);">
       <div class="flex items-center w-full px-4 py-2">
-        <button @click="router.back()" class="text-muted hover:text-primary transition-colors p-2 -ml-2">
+        <button @click="router.push(auth.homeRoute)" class="text-muted hover:text-primary transition-colors p-2 -ml-2">
           <ArrowLeft :size="20" />
         </button>
         <div class="flex-1 text-center">
@@ -244,6 +244,9 @@ import type { ApiHistoryEntry } from '@/api/types'
 const route = useRoute()
 const router = useRouter()
 const ui = useUiStore()
+
+import { useAuthStore } from '@/stores/authStore'
+const auth = useAuthStore()
 
 const vehicleCode = computed(() => route.params.vehicleCode as string)
 const tripFrom = computed(() => (route.query.from as string) || '')

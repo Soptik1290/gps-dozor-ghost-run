@@ -2,7 +2,7 @@
   <div class="triplog-view min-h-dvh pb-20 bg-void">
     <!-- ── Header ── -->
     <header class="glass-panel border-b border-panel-border px-4 py-3">
-      <button @click="router.back()" class="text-muted text-[0.625rem] font-mono uppercase tracking-wider mb-1 flex items-center gap-1">
+      <button @click="router.push(auth.homeRoute)" class="text-muted text-[0.625rem] font-mono uppercase tracking-wider mb-1 flex items-center gap-1">
         <ArrowLeft :size="12" /> BACK
       </button>
       <div class="flex items-center justify-between">
@@ -133,6 +133,10 @@ import type { ApiTrip } from '@/api/types'
 
 const route = useRoute()
 const router = useRouter()
+
+// Auth for role-based navigation
+import { useAuthStore } from '@/stores/authStore'
+const auth = useAuthStore()
 
 const vehicleCode = computed(() => route.params.vehicleCode as string)
 const selectedDate = ref(new Date())

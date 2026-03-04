@@ -12,9 +12,24 @@ const router = createRouter({
         },
         {
             path: '/',
-            name: 'Dashboard',
-            component: () => import('@/views/DashboardView.vue'),
+            name: 'Home',
+            redirect: () => {
+                const auth = useAuthStore()
+                return auth.isAdmin ? '/fleet-command' : '/cockpit'
+            },
             meta: { requiresAuth: true },
+        },
+        {
+            path: '/fleet-command',
+            name: 'FleetCommand',
+            component: () => import('@/views/FleetCommandView.vue'),
+            meta: { requiresAuth: true, role: 'ADMIN' },
+        },
+        {
+            path: '/cockpit',
+            name: 'Cockpit',
+            component: () => import('@/views/CockpitView.vue'),
+            meta: { requiresAuth: true, role: 'DRIVER' },
         },
         {
             path: '/trips/:vehicleCode',
@@ -37,14 +52,23 @@ const router = createRouter({
     ],
 })
 
-// Navigation guard: redirect to login if not authenticated
+// Navigation guard: auth + role enforcement
 router.beforeEach((to) => {
     const auth = useAuthStore()
+
+    // Redirect unauthenticated users to login
     if (to.meta.requiresAuth && !auth.isAuthenticated) {
         return { name: 'Login', query: { redirect: to.fullPath } }
     }
+
+    // Redirect authenticated users away from login
     if (to.name === 'Login' && auth.isAuthenticated) {
-        return { name: 'Dashboard' }
+        return auth.homeRoute
+    }
+
+    // Role-based access control
+    if (to.meta.role && auth.role !== to.meta.role) {
+        return auth.homeRoute
     }
 })
 

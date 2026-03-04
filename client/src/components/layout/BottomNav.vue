@@ -20,14 +20,29 @@
 </template>
 
 <script setup lang="ts">
-import { LayoutDashboard, Route, Gauge, Settings } from 'lucide-vue-next'
+import { computed } from 'vue'
+import { LayoutDashboard, Route, Settings, Crosshair } from 'lucide-vue-next'
+import { useAuthStore } from '@/stores/authStore'
 
-const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Fleet' },
-  { to: '/trips/_', icon: Route, label: 'Trips' },
-  { to: '/ghost-run/_', icon: Gauge, label: 'Ghost' },
-  { to: '/settings', icon: Settings, label: 'Config' },
-]
+const auth = useAuthStore()
+
+const navItems = computed(() => {
+  if (auth.isAdmin) {
+    return [
+      { to: '/fleet-command', icon: LayoutDashboard, label: 'Fleet' },
+      { to: '/trips/_', icon: Route, label: 'Trips' },
+      { to: '/settings', icon: Settings, label: 'Config' },
+    ]
+  }
+
+  // Driver nav
+  const vehiclePlate = auth.assignedVehicle?.plate || '_'
+  return [
+    { to: '/cockpit', icon: Crosshair, label: 'Cockpit' },
+    { to: `/trips/${vehiclePlate}`, icon: Route, label: 'My Trips' },
+    { to: '/settings', icon: Settings, label: 'Config' },
+  ]
+})
 </script>
 
 <style scoped>
