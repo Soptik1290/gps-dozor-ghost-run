@@ -1,7 +1,7 @@
 <template>
-  <nav class="bottom-nav fixed bottom-0 left-0 right-0 z-50 glass-panel border-t border-panel-border"
+  <nav class="bottom-nav fixed bottom-0 left-0 right-0 lg:left-1/2 lg:-translate-x-1/2 lg:bottom-6 lg:w-[400px] z-50 glass-panel lg:border lg:rounded-2xl border-t border-panel-border"
        style="padding-bottom: env(safe-area-inset-bottom);">
-    <div class="flex items-center justify-around h-16">
+    <div class="flex items-center justify-around h-16 lg:h-14">
       <router-link
         v-for="item in navItems"
         :key="item.to"

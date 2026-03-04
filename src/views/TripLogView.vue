@@ -24,9 +24,14 @@
       </button>
     </div>
 
-    <!-- ── Loading ── -->
-    <div v-if="tripsLoading" class="flex items-center justify-center py-20">
-      <div class="text-volt text-sm font-mono animate-pulse-neon">LOADING TRIPS...</div>
+    <!-- ── Loading & Scanning ── -->
+    <div v-if="tripsLoading || isScanning" class="flex flex-col items-center justify-center py-20">
+      <div class="text-volt text-sm font-mono animate-pulse-neon mb-2">
+        {{ isScanning ? 'SEARCHING FOR DATA...' : 'LOADING TRIPS...' }}
+      </div>
+      <div v-if="isScanning" class="text-muted text-[0.625rem] font-mono tracking-widest">
+        SCANNING PAST {{ autoScanDays }} DAYS
+      </div>
     </div>
 
     <!-- ── Trip List ── -->
@@ -74,24 +79,36 @@
             <span class="data-label__key">FUEL</span>
             <span class="data-label__value !text-xs text-muted">{{ trip.FuelConsumed.Value.toFixed(1) }} L</span>
           </div>
-          <div v-if="trip.DriverName" class="data-label ml-auto">
-            <span class="data-label__key">DRIVER</span>
-            <span class="data-label__value !text-xs truncate max-w-[80px]">{{ trip.DriverName }}</span>
-          </div>
         </div>
       </div>
 
       <!-- Empty state -->
-      <div v-if="!tripsLoading && (!trips || trips.length === 0)" class="py-12 text-center">
-        <div class="text-muted text-xs font-mono">NO TRIPS RECORDED FOR THIS DAY</div>
-        <div class="text-dim text-[0.5625rem] font-mono mt-1">TRY SELECTING A DIFFERENT DATE</div>
+      <div v-if="!tripsLoading && !isScanning && (!trips || trips.length === 0)" class="py-12 text-center">
+        <div class="text-muted text-xs font-mono">NO TRIPS RECORDED IN LAST 14 DAYS</div>
+        <div class="text-dim text-[0.5625rem] font-mono mt-1">TRY ANOTHER VEHICLE OR DATE</div>
+      </div>
+    </div>
+
+    <!-- ── Ghost Match Overlay ── -->
+    <div v-if="analyzingMatch" class="absolute inset-0 z-50 bg-void/90 flex items-center justify-center backdrop-blur-sm">
+      <div class="text-center">
+        <div class="inline-block relative">
+          <div class="w-16 h-16 border-4 border-volt/20 border-t-volt rounded-full animate-spin mb-4 mx-auto"></div>
+          <div class="absolute inset-0 flex items-center justify-center text-volt animate-pulse">
+            <span class="font-mono text-xs font-bold">AI</span>
+          </div>
+        </div>
+        <div class="text-primary text-sm font-mono tracking-widest mt-4 min-w-[300px]"
+             :class="{ 'text-volt animate-pulse-neon scale-105 transition-transform duration-300': matchStatus === 'OPTIMAL GHOST ROUTE FOUND!' }">
+          {{ matchStatus }}
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { useTrips } from '@/api/endpoints/trips'
@@ -109,8 +126,33 @@ const formattedDate = computed(() =>
   })
 )
 
+// ── Auto-Scanning Logic ──
+const autoScanDays = ref(0)
+const maxScanDays = 14
+const isScanning = ref(true)
+
 // Use the trips composable
-const { data: trips, isLoading: tripsLoading } = useTrips(vehicleCode, selectedDate)
+const { data: trips, isLoading: tripsLoading, isFetching } = useTrips(vehicleCode, selectedDate)
+
+// Watch for data loads to trigger auto-scan if empty
+watch([trips, isFetching], ([newTrips, fetching]) => {
+  if (fetching) return // Wait until fetch is complete
+
+  if (!newTrips || newTrips.length === 0) {
+    if (autoScanDays.value < maxScanDays) {
+      // No trips today, scan backwards
+      autoScanDays.value++
+      prevDay()
+    } else {
+      // Gave up
+      isScanning.value = false
+    }
+  } else {
+    // Found trips!
+    isScanning.value = false
+    autoScanDays.value = 0 // Reset counter for manual navigation
+  }
+}, { immediate: true })
 
 function prevDay() {
   const d = new Date(selectedDate.value)
@@ -119,6 +161,9 @@ function prevDay() {
 }
 
 function nextDay() {
+  // Manual navigation breaks the auto-scan loop
+  isScanning.value = false
+  autoScanDays.value = 0
   const d = new Date(selectedDate.value)
   d.setDate(d.getDate() + 1)
   selectedDate.value = d
@@ -130,11 +175,24 @@ function formatTime(iso: string): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
+// ── Ghost Match Animation Flow ──
+const analyzingMatch = ref(false)
+const matchStatus = ref('ANALYZING HISTORICAL DATA...')
+
 function selectTrip(trip: ApiTrip) {
-  router.push({
-    name: 'GhostRun',
-    params: { vehicleCode: vehicleCode.value },
-    query: { from: trip.StartTime, to: trip.FinishTime },
-  })
+  analyzingMatch.value = true
+  matchStatus.value = 'ANALYZING HISTORICAL DATA...'
+  
+  setTimeout(() => {
+    matchStatus.value = 'OPTIMAL GHOST ROUTE FOUND!'
+    
+    setTimeout(() => {
+      router.push({
+        name: 'GhostRun',
+        params: { vehicleCode: vehicleCode.value },
+        query: { from: trip.StartTime, to: trip.FinishTime },
+      })
+    }, 800)
+  }, 1200)
 }
 </script>
