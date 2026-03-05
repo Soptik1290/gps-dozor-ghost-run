@@ -221,20 +221,13 @@ const analyzingMatch = ref(false)
 const matchStatus = ref('ANALYZING HISTORICAL DATA...')
 
 function selectTrip(trip: TripOrNest) {
-  analyzingMatch.value = true
-  matchStatus.value = 'ANALYZING HISTORICAL DATA...'
-  
-  setTimeout(() => {
-    matchStatus.value = 'OPTIMAL GHOST ROUTE FOUND!'
-    
-    setTimeout(() => {
-      router.push({
-        name: 'GhostRun',
-        params: { vehicleCode: vehicleCode.value },
-        query: { ghostId: String(trip.id || ''), from: String(trip.startTime || trip.StartTime), to: String(trip.endTime || trip.FinishTime) },
-      })
-    }, 800)
-  }, 1200)
+  router.push({
+    name: 'TripResult',
+    params: { 
+      vehicleCode: vehicleCode.value,
+      tripId: String(trip.id)
+    }
+  })
 }
 // ── Admin Feedback State ──
 const expandedTripIndex = ref<number | null>(null)

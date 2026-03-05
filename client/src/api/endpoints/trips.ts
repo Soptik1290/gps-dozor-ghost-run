@@ -64,3 +64,11 @@ export async function analyzeDriver(tripId: number | string) {
 export async function analyzeAdmin(tripId: number | string) {
     return nestFetch(`/trips/${tripId}/analyze/admin`, { method: 'POST' })
 }
+
+/**
+ * Fetch Post-Mission Evaluation Report
+ */
+export async function getTripEvaluation(tripId: number | string) {
+    return nestFetch<any>(`/trips/${tripId}/evaluation`)
+}
+

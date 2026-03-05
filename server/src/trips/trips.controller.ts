@@ -84,6 +84,12 @@ export class TripsController {
         return this.tripsService.findOne(id);
     }
 
+    @Get(':id/evaluation')
+    @ApiOperation({ summary: 'Get Post-Mission Evaluation report' })
+    getEvaluation(@Param('id', ParseIntPipe) id: number) {
+        return this.tripsService.getEvaluation(id);
+    }
+
     @Get(':id/replay')
     @ApiOperation({
         summary: 'Get full TripLog (GPS breadcrumbs) for the Ghost Replay Engine',

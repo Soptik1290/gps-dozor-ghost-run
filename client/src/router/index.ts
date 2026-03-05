@@ -38,6 +38,12 @@ const router = createRouter({
             meta: { requiresAuth: true },
         },
         {
+            path: '/trips/:vehicleCode/:tripId/result',
+            name: 'TripResult',
+            component: () => import('@/views/TripResultView.vue'),
+            meta: { requiresAuth: true },
+        },
+        {
             path: '/ghost-run/:vehicleCode',
             name: 'GhostRun',
             component: () => import('@/views/GhostRunView.vue'),

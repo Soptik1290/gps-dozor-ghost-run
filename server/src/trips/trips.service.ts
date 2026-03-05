@@ -197,4 +197,43 @@ export class TripsService {
 
         return { feedback, weather };
     }
+
+    async getEvaluation(id: number) {
+        const trip = await this.findOne(id);
+        const durationMs = trip.endTime.getTime() - trip.startTime.getTime();
+
+        // Find ghost (best previous run on same route)
+        const ghost = await this.findMatch(
+            trip.startLat ?? 0,
+            trip.startLng ?? 0,
+            trip.endLat ?? 0,
+            trip.endLng ?? 0
+        );
+
+        let deltaSeconds = 0;
+        let ghostScore = 0;
+
+        if (ghost && ghost.id !== trip.id) {
+            const ghostDurationMs = ghost.endTime.getTime() - ghost.startTime.getTime();
+            deltaSeconds = Math.floor((durationMs - ghostDurationMs) / 1000);
+            ghostScore = ghost.score;
+        }
+
+        // Trigger AI analysis if not already done
+        const driverFeedback = await this.analyzeDriver(id);
+
+        return {
+            trip,
+            evaluation: {
+                score: trip.score,
+                rank: trip.rank || 'B',
+                durationMs,
+                deltaSeconds, // positive = slower than ghost, negative = faster
+                ghostScore,
+                fuelConsumption: trip.fuelConsumption || 6.5,
+                ecoEvents: trip.ecoEventsCount,
+                feedback: driverFeedback.feedback,
+            }
+        };
+    }
 }
