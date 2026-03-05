@@ -17,11 +17,11 @@
       <div class="text-volt text-xs font-mono animate-pulse">DECRYPTING TELEMETRY...</div>
     </div>
 
-    <div v-else-if="evalData" class="px-4 py-6 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div v-else-if="evalData" class="px-4 py-6 space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
       
       <!-- ── Primary Score Gauge ── -->
-      <section class="flex flex-col items-center justify-center">
-        <div class="relative w-48 h-48 flex items-center justify-center">
+      <section class="flex flex-col items-center justify-center py-4">
+        <div class="relative w-48 h-48 flex items-center justify-center mb-8">
           <!-- Circular Track -->
           <svg class="w-full h-full -rotate-90">
             <circle
@@ -45,18 +45,19 @@
           <!-- Score Content -->
           <div class="absolute flex flex-col items-center text-center">
             <span class="text-4xl font-black text-primary tracking-tighter">{{ evalData.evaluation.score }}%</span>
-            <span class="text-[0.625rem] font-mono text-volt tracking-[0.2em] font-bold">MISSION SCORE</span>
+            <span class="text-[0.625rem] font-mono text-volt tracking-[0.2em] font-bold uppercase">Mission Score</span>
           </div>
-          <!-- Rank Badge -->
-          <div class="absolute -bottom-2 bg-volt text-void font-black text-xl px-3 py-1 rounded skew-x-[-12deg] shadow-lg">
-            RANK {{ evalData.evaluation.rank }}
-          </div>
+        </div>
+
+        <!-- Rank Badge (Flowing normally to avoid overlap) -->
+        <div class="bg-volt text-void font-black text-2xl px-8 py-2.5 rounded skew-x-[-12deg] shadow-[0_12px_32px_rgba(206,255,0,0.4)] z-20 uppercase tracking-tighter">
+          RANK {{ evalData.evaluation.rank }}
         </div>
       </section>
 
       <!-- ── Comparison Section ── -->
-      <section class="grid grid-cols-2 gap-4">
-        <div class="glass-panel p-4 border-l-2 border-volt">
+      <section class="grid grid-cols-2 gap-4 relative z-10">
+        <div class="glass-panel p-4 border-l-2 border-volt bg-void/60 backdrop-blur-sm">
           <div class="text-[0.625rem] font-mono text-muted mb-1 uppercase">Mission Time</div>
           <div class="text-xl font-mono text-primary">{{ formatDuration(evalData.evaluation.durationMs) }}</div>
           <div 
@@ -67,7 +68,7 @@
             {{ Math.abs(evalData.evaluation.deltaSeconds) }}s vs GHOST
           </div>
         </div>
-        <div class="glass-panel p-4 border-l-2 border-blue-400">
+        <div class="glass-panel p-4 border-l-2 border-blue-400 bg-void/60 backdrop-blur-sm">
           <div class="text-[0.625rem] font-mono text-muted mb-1 uppercase">Eco-Performance</div>
           <div class="text-xl font-mono text-primary">{{ evalData.evaluation.fuelConsumption.toFixed(1) }}L</div>
           <div class="text-[0.625rem] font-mono text-blue-300 mt-1">
