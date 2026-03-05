@@ -84,6 +84,12 @@ export class TripsController {
         return this.tripsService.findOne(id);
     }
 
+    @Post('evaluate-gpsdozor')
+    @ApiOperation({ summary: 'Get evaluation for a GPS Dozor trip (without local DB)' })
+    async evaluateGpsDozorTrip(@Body() tripData: any) {
+        return this.tripsService.getEvaluationFromGpsDozorTrip(tripData);
+    }
+
     @Get(':id/evaluation')
     @ApiOperation({ summary: 'Get Post-Mission Evaluation report' })
     getEvaluation(@Param('id', ParseIntPipe) id: number) {

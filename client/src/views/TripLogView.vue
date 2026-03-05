@@ -139,7 +139,8 @@ type TripOrNest = ApiTrip & {
   distanceKm?: number, 
   fuelConsumption?: number,
   startAddress?: string,
-  endAddress?: string
+  endAddress?: string,
+  VehicleCode?: string,
 }
 
 const route = useRoute()
@@ -221,12 +222,15 @@ const analyzingMatch = ref(false)
 const matchStatus = ref('ANALYZING HISTORICAL DATA...')
 
 function selectTrip(trip: TripOrNest) {
+  console.log('[TripLog] selectTrip trip:', trip)
+  const tripDataString = encodeURIComponent(JSON.stringify(trip))
   router.push({
     name: 'TripResult',
     params: { 
       vehicleCode: vehicleCode.value,
-      tripId: String(trip.id)
-    }
+      tripId: String(trip.id || trip.VehicleCode || '0')
+    },
+    query: { tripData: tripDataString }
   })
 }
 // ── Admin Feedback State ──

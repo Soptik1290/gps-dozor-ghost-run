@@ -51,6 +51,11 @@ const props = defineProps({
     type: Number,
     default: 13,
   },
+  /** Fit bounds every time the positions update (e.g. on new trip selected) */
+  forceFitBoundsOnUpdate: {
+    type: Boolean,
+    default: false,
+  }
 })
 
 const emit = defineEmits<{
@@ -406,6 +411,9 @@ watch(
   () => {
     if (map && map.isStyleLoaded()) {
       updateTrailLayers(map)
+      if (props.forceFitBoundsOnUpdate) {
+        fitToTrail(map)
+      }
     }
   },
   { deep: true }

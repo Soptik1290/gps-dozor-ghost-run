@@ -16,14 +16,22 @@ export function useGroups() {
 
 /**
  * Fetch all vehicles in a given group.
- * Auto-refreshes every 15s for live tracking.
+ * Auto-refreshes every 5s for live tracking.
  */
 export function useVehicles(groupCode: Ref<string | undefined>) {
     return useQuery({
         queryKey: ['vehicles', groupCode],
-        queryFn: () => nestFetch<ApiVehicle[]>(`/vehicles/group/${groupCode.value}`),
+        queryFn: async () => {
+            // Add cache-busting timestamp
+            const cacheBust = Date.now()
+            const data = await nestFetch<ApiVehicle[]>(`/vehicles/group/${groupCode.value}?_=${cacheBust}`)
+            console.log('[useVehicles] Fetched vehicles:', data?.map(v => ({ code: v.Code, speed: v.Speed, name: v.Name, timestamp: v.LastPositionTimestamp })))
+            return data
+        },
         enabled: () => !!groupCode.value,
-        refetchInterval: 15_000,
+        refetchInterval: 5_000,
+        staleTime: 0,
+        gcTime: 0,
     })
 }
 

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
+import { GpsDozorModule } from './gps-dozor/gps-dozor.module';
 import { AuthModule } from './auth/auth.module';
 import { VehiclesModule } from './vehicles/vehicles.module';
 import { TripsModule } from './trips/trips.module';
@@ -10,6 +11,7 @@ import { WeatherModule } from './weather/weather.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    GpsDozorModule,
     PrismaModule,
     AuthModule,
     VehiclesModule,

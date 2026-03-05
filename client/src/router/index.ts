@@ -26,6 +26,18 @@ const router = createRouter({
             meta: { requiresAuth: true, role: 'ADMIN' },
         },
         {
+            path: '/leaderboard',
+            name: 'Leaderboard',
+            component: () => import('@/views/LeaderboardView.vue'),
+            meta: { requiresAuth: true },
+        },
+        {
+            path: '/leaderboard/:vehicleCode',
+            name: 'LeaderboardDetail',
+            component: () => import('@/views/LeaderboardDetailView.vue'),
+            meta: { requiresAuth: true },
+        },
+        {
             path: '/cockpit',
             name: 'Cockpit',
             component: () => import('@/views/CockpitView.vue'),

@@ -21,7 +21,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { LayoutDashboard, Route, Settings, Crosshair } from 'lucide-vue-next'
+import { LayoutDashboard, Route, Settings, Crosshair, Trophy } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/authStore'
 
 const auth = useAuthStore()
@@ -30,6 +30,7 @@ const navItems = computed(() => {
   if (auth.isAdmin) {
     return [
       { to: '/fleet-command', icon: LayoutDashboard, label: 'Fleet' },
+      { to: '/leaderboard', icon: Trophy, label: 'Rank' },
       { to: '/trips/_', icon: Route, label: 'Trips' },
       { to: '/settings', icon: Settings, label: 'Config' },
     ]

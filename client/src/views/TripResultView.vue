@@ -144,22 +144,41 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, User, Activity, Play, Info, AlertTriangle } from 'lucide-vue-next'
-import { getTripEvaluation } from '@/api/endpoints/trips'
+import { getTripEvaluation, getTripEvaluationFromGpsDozor } from '@/api/endpoints/trips'
 
 const route = useRoute()
 const router = useRouter()
 
 const vehicleCode = computed(() => route.params.vehicleCode as string)
 const tripId = computed(() => route.params.tripId as string)
+const tripDataFromQuery = computed(() => {
+  try {
+    if (route.query.tripData) {
+      return JSON.parse(decodeURIComponent(route.query.tripData as string))
+    }
+  } catch (e) {
+    console.error('Failed to parse tripData:', e)
+  }
+  return null
+})
 
 const loading = ref(true)
 const evalData = ref<any>(null)
+const error = ref<string | null>(null)
 
 onMounted(async () => {
+  console.log('[TripResult] tripDataFromQuery:', tripDataFromQuery.value)
+  console.log('[TripResult] tripId:', tripId.value)
   try {
-    evalData.value = await getTripEvaluation(tripId.value)
-  } catch (e) {
-    console.error('Failed to load evaluation', e)
+    if (tripDataFromQuery.value) {
+      evalData.value = await getTripEvaluationFromGpsDozor(tripDataFromQuery.value)
+    } else {
+      evalData.value = await getTripEvaluation(tripId.value)
+    }
+    console.log('[TripResult] evalData:', evalData.value)
+  } catch (e: any) {
+    console.error('[TripResult] Failed to load evaluation', e)
+    error.value = e.message || 'Unknown error'
   } finally {
     loading.value = false
   }
@@ -170,13 +189,19 @@ function goBack() {
 }
 
 function replayGhost() {
+  const trip = evalData.value?.trip
+  const tripData = {
+    ...trip,
+    VehicleCode: vehicleCode.value
+  }
+  const tripDataString = encodeURIComponent(JSON.stringify(tripData))
   router.push({
     name: 'GhostRun',
     params: { vehicleCode: vehicleCode.value },
     query: { 
-      ghostId: tripId.value,
-      from: evalData.value.trip.startTime,
-      to: evalData.value.trip.endTime
+      tripData: tripDataString,
+      from: trip?.startTime || trip?.StartTime,
+      to: trip?.endTime || trip?.FinishTime
     }
   })
 }

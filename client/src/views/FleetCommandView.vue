@@ -213,7 +213,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ChevronRight } from 'lucide-vue-next'
 import { useGroups, useVehicles } from '@/api/endpoints/vehicles'
@@ -245,7 +245,7 @@ const { data: groups } = useGroups()
 const activeGroup = computed(() => groups.value?.[0])
 const activeGroupCode = computed(() => activeGroup.value?.Code)
 
-// Fetch vehicles with 15s auto-refresh
+// Fetch vehicles with 5s auto-refresh
 const {
   data: vehiclesData,
   isLoading: vehiclesLoading,
@@ -253,7 +253,22 @@ const {
   refetch: vehiclesRefetch,
 } = useVehicles(activeGroupCode)
 
+// Manual refresh interval for live updates
+let refreshInterval: ReturnType<typeof setInterval> | null = null
+onMounted(() => {
+  refreshInterval = setInterval(() => {
+    console.log('[FleetCommand] Refreshing vehicles...')
+    vehiclesRefetch()
+  }, 5000)
+})
+onUnmounted(() => {
+  if (refreshInterval) clearInterval(refreshInterval)
+})
+
 // Apply crew enrichment when data arrives
+watch(vehiclesData, (newData: any) => {
+  console.log('[FleetCommand] Vehicles updated:', newData?.length)
+})
 const enrichedVehicles = computed(() => {
   if (!vehiclesData.value) return []
   return vehiclesData.value.map((v) => ({

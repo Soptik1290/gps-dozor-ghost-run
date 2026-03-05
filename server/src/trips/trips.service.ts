@@ -1,17 +1,36 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { GpsDozorService } from '../gps-dozor/gps-dozor.service';
 import { AiService } from '../ai/ai.service';
 import { WeatherService } from '../weather/weather.service';
 
 @Injectable()
 export class TripsService {
+    private readonly logger = new Logger(TripsService.name);
+
     constructor(
         private prisma: PrismaService,
+        private gpsDozor: GpsDozorService,
         private aiService: AiService,
         private weatherService: WeatherService,
-    ) { }
+    ) {}
 
-    findAll(vehicleId?: number, driverId?: number, vehicleCode?: string, from?: Date, to?: Date) {
+    async findAll(vehicleId?: number, driverId?: number, vehicleCode?: string, from?: Date, to?: Date) {
+        if (vehicleCode) {
+            try {
+                const fromStr = from ? from.toISOString() : new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
+                const toStr = to ? to.toISOString() : new Date().toISOString();
+                
+                const gpsDozorTrips = await this.gpsDozor.getVehicleTrips(vehicleCode, fromStr, toStr);
+                if (gpsDozorTrips && gpsDozorTrips.length > 0) {
+                    this.logger.log(`Returning ${gpsDozorTrips.length} trips from GPS Dozor API`);
+                    return gpsDozorTrips;
+                }
+            } catch (error) {
+                this.logger.warn('GPS Dozor API failed for trips, falling back to local DB', error);
+            }
+        }
+
         return this.prisma.trip.findMany({
             where: {
                 ...(vehicleId ? { vehicleId } : {}),
@@ -73,16 +92,60 @@ export class TripsService {
             score: trip.score,
             rank: trip.rank,
             positions: logs.map((log) => ({
-                Lat: log.lat.toFixed(6),
-                Lng: log.lng.toFixed(6),
-                Speed: log.speed,
-                Time: log.timestamp.toISOString(),
+                lat: log.lat.toFixed(6),
+                lng: log.lng.toFixed(6),
+                speed: log.speed,
+                time: log.timestamp.toISOString(),
             })),
         };
     }
 
+    async getHistory(vehicleCode: string, from: Date, to: Date) {
+        try {
+            const fromStr = from.toISOString();
+            const toStr = to.toISOString();
+            return await this.gpsDozor.getVehicleHistory(vehicleCode, fromStr, toStr);
+        } catch (error) {
+            this.logger.warn('GPS Dozor API failed for history, using local DB', error);
+            const logs = await this.prisma.tripLog.findMany({
+                where: {
+                    trip: {
+                        OR: [
+                            { vehicle: { name: vehicleCode } },
+                            { vehicle: { plate: vehicleCode } }
+                        ],
+                    },
+                    timestamp: {
+                        gte: from,
+                        lte: to
+                    }
+                },
+                orderBy: { timestamp: 'asc' }
+            });
+
+            return {
+                Positions: logs.map(l => ({
+                    Lat: l.lat.toFixed(6),
+                    Lng: l.lng.toFixed(6),
+                    Speed: l.speed,
+                    Time: l.timestamp.toISOString()
+                }))
+            };
+        }
+    }
+
+    async getEcoEvents(vehicleCode: string, from: Date, to: Date) {
+        try {
+            const fromStr = from.toISOString();
+            const toStr = to.toISOString();
+            return await this.gpsDozor.getEcoDrivingEvents(vehicleCode, fromStr, toStr);
+        } catch (error) {
+            this.logger.warn('GPS Dozor API failed for eco-events, using local DB', error);
+            return [];
+        }
+    }
+
     async findMatch(currentLat: number, currentLng: number, destinationLat: number, destinationLng: number) {
-        // Haversine formula directly in SQL to find trips matching start and end points within 1km
         const matches = await this.prisma.$queryRaw<Array<{ id: number }>>`
             SELECT id 
             FROM "Trip"
@@ -106,10 +169,9 @@ export class TripsService {
         `;
 
         if (!matches || matches.length === 0) {
-            return null; // Pacemaker — no ghost found
+            return null;
         }
 
-        // Return the full trip details + replay logs for the ghost rendering
         const ghostId = matches[0].id;
         const tripData = await this.findOne(ghostId);
         const replayData = await this.getReplayData(ghostId);
@@ -134,45 +196,12 @@ export class TripsService {
             await this.prisma.trip.update({ where: { id }, data: { weatherSnapshot: weather } });
         }
 
-        const fuel = trip.fuelConsumption || 6.5; // Fallback fuel
+        const fuel = trip.fuelConsumption || 6.5;
         const feedback = await this.aiService.generateDriverFeedback(weather, trip.score, fuel, trip.ecoEventsCount);
 
         await this.prisma.trip.update({ where: { id }, data: { aiDriverFeedback: feedback } });
 
         return { feedback, weather };
-    }
-
-    async getHistory(vehicleCode: string, from: Date, to: Date) {
-        const logs = await this.prisma.tripLog.findMany({
-            where: {
-                trip: {
-                    OR: [
-                        { vehicle: { name: vehicleCode } },
-                        { vehicle: { plate: vehicleCode } }
-                    ],
-                },
-                timestamp: {
-                    gte: from,
-                    lte: to
-                }
-            },
-            orderBy: { timestamp: 'asc' }
-        });
-
-        return {
-            Positions: logs.map(l => ({
-                Lat: l.lat.toFixed(6),
-                Lng: l.lng.toFixed(6),
-                Speed: l.speed,
-                Time: l.timestamp.toISOString()
-            }))
-        };
-    }
-
-    async getEcoEvents(vehicleCode: string, from: Date, to: Date) {
-        // Return empty mock for now to satisfy the API
-        // In a real app, this would query an EcoEvent table
-        return [];
     }
 
     async analyzeAdmin(id: number) {
@@ -202,7 +231,6 @@ export class TripsService {
         const trip = await this.findOne(id);
         const durationMs = trip.endTime.getTime() - trip.startTime.getTime();
 
-        // Find ghost (best previous run on same route)
         const ghost = await this.findMatch(
             trip.startLat ?? 0,
             trip.startLng ?? 0,
@@ -219,7 +247,6 @@ export class TripsService {
             ghostScore = ghost.score;
         }
 
-        // Trigger AI analysis if not already done
         const driverFeedback = await this.analyzeDriver(id);
 
         return {
@@ -228,11 +255,77 @@ export class TripsService {
                 score: trip.score,
                 rank: trip.rank || 'B',
                 durationMs,
-                deltaSeconds, // positive = slower than ghost, negative = faster
+                deltaSeconds,
                 ghostScore,
                 fuelConsumption: trip.fuelConsumption || 6.5,
                 ecoEvents: trip.ecoEventsCount,
                 feedback: driverFeedback.feedback,
+            }
+        };
+    }
+
+    async getEvaluationFromGpsDozorTrip(tripData: any) {
+        this.logger.log('Creating evaluation from GPS Dozor trip data');
+        
+        const startTime = tripData.StartTime || tripData.startTime;
+        const finishTime = tripData.FinishTime || tripData.finishTime;
+        
+        if (!startTime || !finishTime) {
+            throw new Error('Invalid trip data - missing start/finish time');
+        }
+
+        const start = new Date(startTime);
+        const finish = new Date(finishTime);
+        const durationMs = finish.getTime() - start.getTime();
+        
+        const totalDistance = tripData.TotalDistance || tripData.distanceKm || 0;
+        const avgSpeed = tripData.AverageSpeed || (totalDistance > 0 ? (totalDistance / (durationMs / 3600000)) : 0);
+        const maxSpeed = tripData.MaxSpeed || (avgSpeed * 1.2);
+        const fuel = tripData.FuelConsumed?.Value || tripData.fuelConsumption || 6.5;
+        
+        const score = Math.min(100, Math.round(
+            (avgSpeed / 80) * 50 + 
+            (100 - Math.min(30, maxSpeed - 60)) * 0.5 +
+            20
+        ));
+        
+        let rank = 'C';
+        if (score >= 90) rank = 'S';
+        else if (score >= 80) rank = 'A';
+        else if (score >= 65) rank = 'B';
+        else if (score >= 50) rank = 'C';
+        
+        let weather = 'Clear';
+        try {
+            const startLat = tripData.StartPosition?.Latitude || tripData.StartPosition?.latitude || 50.0755;
+            const startLng = tripData.StartPosition?.Longitude || tripData.StartPosition?.longitude || 14.4378;
+            weather = await this.weatherService.getWeatherForTrip(startLat, startLng, start);
+        } catch (e) {
+            this.logger.warn('Failed to get weather for trip', e);
+        }
+        
+        const feedback = await this.aiService.generateDriverFeedback(weather, score, fuel, 0);
+
+        return {
+            trip: {
+                ...tripData,
+                startTime: start.toISOString(),
+                endTime: finish.toISOString(),
+                distanceKm: totalDistance,
+                avgSpeed,
+                maxSpeed,
+                score,
+                rank,
+            },
+            evaluation: {
+                score,
+                rank,
+                durationMs,
+                deltaSeconds: 0,
+                ghostScore: 0,
+                fuelConsumption: fuel,
+                ecoEvents: 0,
+                feedback,
             }
         };
     }

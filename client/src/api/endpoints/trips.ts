@@ -66,6 +66,16 @@ export async function analyzeAdmin(tripId: number | string) {
 }
 
 /**
+ * Fetch Post-Mission Evaluation Report for a GPS Dozor trip (without local DB)
+ */
+export async function getTripEvaluationFromGpsDozor(tripData: any) {
+    return nestFetch('/trips/evaluate-gpsdozor', {
+        method: 'POST',
+        body: JSON.stringify(tripData),
+    })
+}
+
+/**
  * Fetch Post-Mission Evaluation Report
  */
 export async function getTripEvaluation(tripId: number | string) {

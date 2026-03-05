@@ -244,7 +244,7 @@ import RaceEngineer from '@/components/hud/RaceEngineer.vue'
 import { useVehicleHistory } from '@/api/endpoints/history'
 import { useEcoDrivingEvents } from '@/api/endpoints/ecoDriving'
 import { useWeather } from '@/api/endpoints/weather'
-import { analyzeDriver } from '@/api/endpoints/trips'
+import { analyzeDriver, getTripEvaluationFromGpsDozor } from '@/api/endpoints/trips'
 import { nestFetch } from '@/api/client'
 import { useUiStore } from '@/stores/uiStore'
 import { useGhostRun } from '@/composables/useGhostRun'
@@ -265,6 +265,18 @@ const tripTo = computed(() => (route.query.to as string) || '')
 const destLat = computed(() => route.query.destLat as string)
 const destLng = computed(() => route.query.destLng as string)
 const ghostId = computed(() => route.query.ghostId as string)
+
+// Get trip data from query params for GPS Dozor trips
+const tripDataFromQuery = computed(() => {
+  try {
+    if (route.query.tripData) {
+      return JSON.parse(decodeURIComponent(route.query.tripData as string))
+    }
+  } catch (e) {
+    console.error('Failed to parse tripData:', e)
+  }
+  return null
+})
 
 const hasMapToken = computed(() => {
   const t = import.meta.env.VITE_MAPBOX_TOKEN
@@ -359,6 +371,27 @@ async function fetchSmartNavigationRoute() {
 }
 
 async function fetchGhostReplay() {
+  console.log('[GhostRun] fetchGhostReplay ghostId:', ghostId.value, 'tripData:', tripDataFromQuery.value)
+  
+  // Use trip data directly if available (GPS Dozor mode)
+  if (tripDataFromQuery.value) {
+    const trip = tripDataFromQuery.value
+    // Calculate score from trip data
+    const startTime = trip.StartTime || trip.startTime
+    const finishTime = trip.FinishTime || trip.finishTime
+    const totalDistance = trip.TotalDistance || trip.distanceKm || 0
+    
+    if (startTime && finishTime) {
+      const durationMs = new Date(finishTime).getTime() - new Date(startTime).getTime()
+      const avgSpeed = trip.AverageSpeed || (totalDistance > 0 ? (totalDistance / (durationMs / 3600000)) : 0)
+      const score = Math.min(100, Math.round((avgSpeed / 80) * 50 + 20))
+      ghostScore.value = score
+      ghostRank.value = score >= 90 ? 'S' : score >= 80 ? 'A' : score >= 65 ? 'B' : score >= 50 ? 'C' : 'F'
+    }
+    return
+  }
+  
+  // Original DB-based fetch
   if (!ghostId.value) return
   try {
     const json = await nestFetch<any>(`/trips/${ghostId.value}/replay`)
@@ -370,20 +403,38 @@ async function fetchGhostReplay() {
   } catch(e) { console.error('Ghost replay error', e) }
 }
 
-watch([destLat, destLng, ghostId], () => {
+watch([destLat, destLng, ghostId, tripDataFromQuery], () => {
   fetchSmartNavigationRoute()
   fetchGhostReplay()
 }, { immediate: true })
 
 const realityPositions = computed<ApiHistoryEntry[]>(() => {
+  console.log('[GhostRun] realityPositions computed:', {
+    historyData: historyData.value,
+    mapboxPositions: mapboxRealityPositions.value.length,
+    tripFrom: tripFrom.value,
+    tripTo: tripTo.value
+  })
+  
   if (mapboxRealityPositions.value.length > 0) return mapboxRealityPositions.value
-  return historyData.value?.Positions ?? []
+  
+  // GPS Dozor API returns array with Positions property
+  if (historyData.value) {
+    // Handle both array [{Positions: [...]}] and object {Positions: [...]} formats
+    const data = Array.isArray(historyData.value) ? historyData.value[0] : historyData.value
+    if (data?.Positions) {
+      console.log('[GhostRun] Using history positions:', data.Positions.length)
+      return data.Positions
+    }
+  }
+  return []
 })
 
 const ghostPositions = computed<ApiHistoryEntry[]>(() => {
+  console.log('[GhostRun] ghostId:', ghostId.value, 'fetchedGhostPositions:', fetchedGhostPositions.value.length)
   if (fetchedGhostPositions.value.length > 0) return fetchedGhostPositions.value
   
-  // Demo fallback
+  // Demo fallback - create a slightly different route from reality
   if (realityPositions.value.length === 0) return []
   return realityPositions.value.map((p, idx) => ({
     ...p,
@@ -392,6 +443,14 @@ const ghostPositions = computed<ApiHistoryEntry[]>(() => {
 })
 
 const historyLoading = computed(() => {
+  console.log('[GhostRun] historyLoading:', {
+    hasMapToken: hasMapToken.value,
+    destLat: destLat.value,
+    mapboxPositions: mapboxRealityPositions.value.length,
+    historyLoadingRef: historyLoadingRef.value,
+    tripFrom: tripFrom.value,
+    tripTo: tripTo.value
+  })
   if (!hasMapToken.value) return false
   if (destLat.value) return mapboxRealityPositions.value.length === 0
   return historyLoadingRef.value
@@ -399,7 +458,12 @@ const historyLoading = computed(() => {
 
 // ── Eco-Driving Events ──
 const { data: ecoEventsData } = useEcoDrivingEvents(vehicleCode, tripFrom, tripTo)
-const ecoEventsRef = computed(() => ecoEventsData.value ?? [])
+const ecoEventsRef = computed(() => {
+  if (!ecoEventsData.value) return []
+  // Handle both array and object formats
+  const data = Array.isArray(ecoEventsData.value) ? ecoEventsData.value : ecoEventsData.value
+  return Array.isArray(data) ? data : []
+})
 
 // ── Weather based on first position ──
 const firstPos = computed(() => realityPositions.value[0])
@@ -454,6 +518,24 @@ const aiFeedback = ref('')
 const aiFeedbackLoading = ref(false)
 
 async function fetchAiDebrief() {
+  // Use trip data directly if available (GPS Dozor mode)
+  if (tripDataFromQuery.value) {
+    aiFeedbackLoading.value = true
+    try {
+      // Call the new endpoint that accepts trip data directly
+      const data = await getTripEvaluationFromGpsDozor(tripDataFromQuery.value) as any
+      if (data?.evaluation?.feedback) {
+        aiFeedback.value = data.evaluation.feedback
+      }
+    } catch (e) {
+      console.error('Failed to get AI debrief from GPS Dozor trip', e)
+    } finally {
+      aiFeedbackLoading.value = false
+    }
+    return
+  }
+  
+  // Original DB-based fetch
   if (!ghostId.value) return
   aiFeedbackLoading.value = true
   try {
@@ -480,8 +562,8 @@ watch(progressPercent, (pct) => {
 })
 
 // Initial load check if we start at 100% or just showing debrief
-watch([showDebrief, ghostId], ([showing, gId]) => {
-  if (showing && gId && !aiFeedback.value && !aiFeedbackLoading.value) {
+watch([showDebrief, ghostId, tripDataFromQuery], ([showing, gId, tripData]) => {
+  if (showing && (gId || tripData) && !aiFeedback.value && !aiFeedbackLoading.value) {
     fetchAiDebrief()
   }
 }, { immediate: true })
