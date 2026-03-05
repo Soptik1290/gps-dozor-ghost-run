@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/vue-query'
 import { type Ref } from 'vue'
-import { apiFetch } from '@/api/client'
+import { nestFetch } from '@/api/client'
 import type { ApiVehicleHistory } from '@/api/types'
 
 /**
@@ -14,12 +14,10 @@ export function useVehicleHistory(
 ) {
     return useQuery({
         queryKey: ['history', vehicleCode, from, to],
-        queryFn: async () => {
-            const data = await apiFetch<ApiVehicleHistory[]>(
-                `/vehicles/history/${vehicleCode.value}?from=${from.value}&to=${to.value}`
-            )
-            return data?.[0] ?? null
-        },
+        queryFn: () =>
+            nestFetch<ApiVehicleHistory>(
+                `/trips/history?vehicleCode=${encodeURIComponent(vehicleCode.value!)}&from=${encodeURIComponent(from.value!)}&to=${encodeURIComponent(to.value!)}`
+            ),
         enabled: () =>
             !!vehicleCode.value &&
             vehicleCode.value !== '_' &&

@@ -11,11 +11,23 @@ export class TripsService {
         private weatherService: WeatherService,
     ) { }
 
-    findAll(vehicleId?: number, driverId?: number) {
+    findAll(vehicleId?: number, driverId?: number, vehicleCode?: string, from?: Date, to?: Date) {
         return this.prisma.trip.findMany({
             where: {
                 ...(vehicleId ? { vehicleId } : {}),
                 ...(driverId ? { driverId } : {}),
+                ...(vehicleCode ? {
+                    OR: [
+                        { vehicle: { name: vehicleCode } },
+                        { vehicle: { plate: vehicleCode } }
+                    ]
+                } : {}),
+                ...(from || to ? {
+                    startTime: {
+                        ...(from ? { gte: from } : {}),
+                        ...(to ? { lte: to } : {}),
+                    }
+                } : {}),
             },
             include: {
                 vehicle: { select: { id: true, name: true, plate: true } },
@@ -128,6 +140,39 @@ export class TripsService {
         await this.prisma.trip.update({ where: { id }, data: { aiDriverFeedback: feedback } });
 
         return { feedback, weather };
+    }
+
+    async getHistory(vehicleCode: string, from: Date, to: Date) {
+        const logs = await this.prisma.tripLog.findMany({
+            where: {
+                trip: {
+                    OR: [
+                        { vehicle: { name: vehicleCode } },
+                        { vehicle: { plate: vehicleCode } }
+                    ],
+                },
+                timestamp: {
+                    gte: from,
+                    lte: to
+                }
+            },
+            orderBy: { timestamp: 'asc' }
+        });
+
+        return {
+            Positions: logs.map(l => ({
+                Lat: l.lat.toFixed(6),
+                Lng: l.lng.toFixed(6),
+                Speed: l.speed,
+                Time: l.timestamp.toISOString()
+            }))
+        };
+    }
+
+    async getEcoEvents(vehicleCode: string, from: Date, to: Date) {
+        // Return empty mock for now to satisfy the API
+        // In a real app, this would query an EcoEvent table
+        return [];
     }
 
     async analyzeAdmin(id: number) {

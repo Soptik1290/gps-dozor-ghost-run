@@ -19,19 +19,51 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 export class TripsController {
     constructor(private readonly tripsService: TripsService) { }
 
-    @Get()
+    @Get('/')
     @ApiOperation({ summary: 'Get trip history for a vehicle' })
     @ApiQuery({ name: 'vehicleId', required: false, type: Number })
     @ApiQuery({ name: 'driverId', required: false, type: Number })
+    @ApiQuery({ name: 'vehicleCode', required: false, type: String })
+    @ApiQuery({ name: 'from', required: false, type: String })
+    @ApiQuery({ name: 'to', required: false, type: String })
     @ApiResponse({ status: 200, description: 'Array of trips' })
     findAll(
         @Query('vehicleId') vehicleId?: string,
         @Query('driverId') driverId?: string,
+        @Query('vehicleCode') vehicleCode?: string,
+        @Query('from') from?: string,
+        @Query('to') to?: string,
     ) {
         return this.tripsService.findAll(
             vehicleId ? parseInt(vehicleId) : undefined,
             driverId ? parseInt(driverId) : undefined,
+            vehicleCode,
+            from ? new Date(from) : undefined,
+            to ? new Date(to) : undefined,
         );
+    }
+
+    @Get('history')
+    @ApiOperation({ summary: 'Get vehicle position history by vehicleCode and time range' })
+    @ApiQuery({ name: 'vehicleCode', required: true, type: String })
+    @ApiQuery({ name: 'from', required: true, type: String })
+    @ApiQuery({ name: 'to', required: true, type: String })
+    getHistory(
+        @Query('vehicleCode') vehicleCode: string,
+        @Query('from') from: string,
+        @Query('to') to: string,
+    ) {
+        return this.tripsService.getHistory(vehicleCode, new Date(from), new Date(to));
+    }
+
+    @Get('eco-events')
+    @ApiOperation({ summary: 'Get eco-driving events by vehicleCode and time range' })
+    getEcoEvents(
+        @Query('vehicleCode') vehicleCode: string,
+        @Query('from') from: string,
+        @Query('to') to: string,
+    ) {
+        return this.tripsService.getEcoEvents(vehicleCode, new Date(from), new Date(to));
     }
 
     @Post('match')

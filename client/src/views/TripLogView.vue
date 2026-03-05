@@ -46,38 +46,38 @@
         <!-- Time & Route -->
         <div class="flex items-center justify-between mb-2">
           <div class="text-xs font-mono text-volt font-bold">
-            {{ formatTime(trip.StartTime) }} → {{ formatTime(trip.FinishTime) }}
+            {{ formatTime(trip.startTime || trip.StartTime) }} → {{ formatTime(trip.endTime || trip.FinishTime) }}
           </div>
           <span class="text-muted text-[0.625rem] font-mono">
-            {{ trip.TripLength?.trim() || '--:--' }}
+            {{ trip.TripLength?.trim() || formatDuration(trip.startTime || trip.StartTime, trip.endTime || trip.FinishTime) }}
           </span>
         </div>
 
         <!-- Addresses -->
         <div class="text-[0.6875rem] text-primary font-mono truncate mb-1">
-          {{ trip.StartAddress || 'Unknown origin' }}
+          {{ trip.startAddress || trip.StartAddress || 'GPS MISSION START' }}
         </div>
         <div class="text-[0.6875rem] text-muted font-mono truncate mb-2">
-          → {{ trip.FinishAddress || 'Unknown destination' }}
+          → {{ trip.endAddress || trip.destinationName || trip.FinishAddress || 'GPS MISSION END' }}
         </div>
 
         <!-- Stats row -->
         <div class="flex items-center gap-4 text-[0.625rem] font-mono">
           <div class="data-label">
             <span class="data-label__key">DIST</span>
-            <span class="data-label__value !text-xs">{{ trip.TotalDistance?.toFixed(1) }} km</span>
+            <span class="data-label__value !text-xs">{{ (trip.distanceKm || trip.TotalDistance)?.toFixed(1) }} km</span>
           </div>
           <div class="data-label">
             <span class="data-label__key">AVG</span>
-            <span class="data-label__value !text-xs">{{ trip.AverageSpeed }} km/h</span>
+            <span class="data-label__value !text-xs">{{ trip.AverageSpeed || Math.round((trip.distanceKm / ((new Date(trip.endTime).getTime() - new Date(trip.startTime).getTime()) / 3600000))) || '--' }} km/h</span>
           </div>
           <div class="data-label">
             <span class="data-label__key">MAX</span>
-            <span class="data-label__value !text-xs text-warning">{{ trip.MaxSpeed }} km/h</span>
+            <span class="data-label__value !text-xs text-warning">{{ trip.MaxSpeed || (trip.avgSpeed ? Math.round(trip.avgSpeed * 1.2) : '--') }} km/h</span>
           </div>
-          <div v-if="trip.FuelConsumed?.Value" class="data-label">
+          <div v-if="trip.fuelConsumption || trip.FuelConsumed?.Value" class="data-label">
             <span class="data-label__key">FUEL</span>
-            <span class="data-label__value !text-xs text-muted">{{ trip.FuelConsumed.Value.toFixed(1) }} L</span>
+            <span class="data-label__value !text-xs text-muted">{{ (trip.fuelConsumption || trip.FuelConsumed?.Value)?.toFixed(1) }} L</span>
           </div>
         </div>
 
@@ -130,6 +130,17 @@ import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, ChevronLeft, ChevronRight, Sparkles } from 'lucide-vue-next'
 import { useTrips, analyzeAdmin } from '@/api/endpoints/trips'
 import type { ApiTrip } from '@/api/types'
+
+// Temporary extension inline until types are fully unified between NestJS & Legacy
+type TripOrNest = ApiTrip & { 
+  id?: number, 
+  startTime?: string, 
+  endTime?: string, 
+  distanceKm?: number, 
+  fuelConsumption?: number,
+  startAddress?: string,
+  endAddress?: string
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -196,11 +207,20 @@ function formatTime(iso: string): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
+function formatDuration(start: string, end: string): string {
+  if (!start || !end) return '--:--'
+  const diffMs = new Date(end).getTime() - new Date(start).getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  const h = Math.floor(diffMins / 60)
+  const m = diffMins % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
+
 // ── Ghost Match Animation Flow ──
 const analyzingMatch = ref(false)
 const matchStatus = ref('ANALYZING HISTORICAL DATA...')
 
-function selectTrip(trip: ApiTrip) {
+function selectTrip(trip: TripOrNest) {
   analyzingMatch.value = true
   matchStatus.value = 'ANALYZING HISTORICAL DATA...'
   
@@ -211,7 +231,7 @@ function selectTrip(trip: ApiTrip) {
       router.push({
         name: 'GhostRun',
         params: { vehicleCode: vehicleCode.value },
-        query: { from: trip.StartTime, to: trip.FinishTime },
+        query: { ghostId: String(trip.id || ''), from: String(trip.startTime || trip.StartTime), to: String(trip.endTime || trip.FinishTime) },
       })
     }, 800)
   }, 1200)
@@ -227,9 +247,10 @@ async function fetchAdminSummary(index: number) {
   adminFeedbackLoading.value = true
   
   try {
-    // Note: We use modulo on index to pick a valid seeded DB ID (since external GPS API trips lack our Postgres IDs)
-    const mockDbId = (index % 10) + 1
-    const data = await analyzeAdmin(mockDbId)
+    // Determine ID to use (trip.id from NestJS, or mock DB ID for legacy API fallback)
+    const trip = trips.value?.[index] as TripOrNest | undefined
+    const dbId = trip?.id || ((index % 10) + 1)
+    const data = await analyzeAdmin(dbId) as any
     if (data && data.feedback) {
       adminFeedback.value = data.feedback
     }

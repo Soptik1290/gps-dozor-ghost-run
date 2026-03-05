@@ -12,6 +12,18 @@ export class VehiclesService {
         });
     }
 
+    async findAllGroups() {
+        const vehicles = await this.prisma.vehicle.findMany({
+            select: { groupCode: true },
+            distinct: ['groupCode'],
+        });
+        return vehicles.map(v => ({
+            Code: v.groupCode,
+            Name: v.groupCode, // For now, reuse code as name
+            VehicleCount: 0 // Mock count or omit
+        }));
+    }
+
     findByGroup(groupCode: string) {
         return this.prisma.vehicle.findMany({
             where: { groupCode: groupCode.toUpperCase() },
@@ -22,6 +34,19 @@ export class VehiclesService {
     async findOne(id: number) {
         const vehicle = await this.prisma.vehicle.findUnique({ where: { id } });
         if (!vehicle) throw new NotFoundException(`Vehicle #${id} not found`);
+        return vehicle;
+    }
+
+    async findByCode(code: string) {
+        const vehicle = await this.prisma.vehicle.findFirst({
+            where: {
+                OR: [
+                    { plate: code },
+                    { name: code }
+                ]
+            }
+        });
+        if (!vehicle) throw new NotFoundException(`Vehicle with code ${code} not found`);
         return vehicle;
     }
 }

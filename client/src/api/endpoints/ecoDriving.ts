@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/vue-query'
 import { type Ref } from 'vue'
-import { apiFetch } from '@/api/client'
+import { nestFetch } from '@/api/client'
 import type { ApiEcoDrivingEvent } from '@/api/types'
 
 /**
@@ -15,8 +15,8 @@ export function useEcoDrivingEvents(
     return useQuery({
         queryKey: ['eco-events', vehicleCode, from, to],
         queryFn: () =>
-            apiFetch<ApiEcoDrivingEvent[]>(
-                `/vehicle/${vehicleCode.value}/eco-driving-events?from=${from.value}&to=${to.value}`
+            nestFetch<ApiEcoDrivingEvent[]>(
+                `/trips/eco-events?vehicleCode=${encodeURIComponent(vehicleCode.value!)}&from=${encodeURIComponent(from.value!)}&to=${encodeURIComponent(to.value!)}`
             ),
         enabled: () =>
             !!vehicleCode.value &&

@@ -81,23 +81,32 @@
       
       <div class="text-xs font-mono text-muted mb-6 tracking-widest break-words">{{ tierLabel }}</div>
       
-      <!-- Stats Grid -->
-      <div class="grid grid-cols-2 gap-4 mb-6">
-        <div class="data-label">
-          <span class="data-label__key">EFFICIENCY SCORE</span>
-          <span class="data-label__value !text-lg text-primary">{{ score }}%</span>
+      <!-- Stats Comparison Grid -->
+      <div class="bg-black/40 border border-panel-border p-4 mb-6 relative mt-6">
+        <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-panel-border text-muted text-[0.625rem] font-bold px-3 py-1 font-mono tracking-widest uppercase rounded">
+          Ghost Comparison
         </div>
-        <div class="data-label">
-          <span class="data-label__key">TIME LOSS</span>
-          <span class="data-label__value !text-lg" :class="timeLossSeconds > 0 ? 'text-warning' : 'text-volt'">
-            {{ Math.floor(timeLossSeconds / 60) }}:{{ String(timeLossSeconds % 60).padStart(2, '0') }}
-          </span>
-        </div>
-        <div class="data-label col-span-2">
-          <span class="data-label__key">ECO INCIDENTS</span>
-          <span class="data-label__value !text-lg" :class="ecoIncidentCount > 0 ? 'text-danger' : 'text-volt'">
-            {{ ecoIncidentCount }} DETECTED
-          </span>
+        
+        <div class="grid grid-cols-3 gap-2 mt-2 text-center items-end">
+          <div class="flex flex-col items-center">
+            <span class="text-[0.625rem] text-muted font-mono mb-1">YOU</span>
+            <span class="text-xl font-bold text-primary">{{ score || '?' }}<span class="text-xs font-normal text-muted">%</span></span>
+            <span class="text-sm font-bold mt-2" :class="ecoIncidentCount > 0 ? 'text-warning' : 'text-volt'">{{ ecoIncidentCount }}<span class="text-[0.5rem] font-normal text-muted block">ERRORS</span></span>
+          </div>
+          
+          <div class="flex flex-col items-center border-l border-r border-panel-border px-2">
+            <span class="text-[0.5rem] text-muted font-mono mb-2">VS GHOST</span>
+            <div class="text-lg font-bold" :class="timeDelta <= 0 ? 'text-volt' : 'text-warning'">
+              <span v-if="timeDelta <= 0">-</span><span v-else>+</span>{{ Math.abs(Math.floor(timeDelta)) }}s
+            </div>
+            <span class="text-[0.5rem] text-muted font-mono mt-1">TIME GAP</span>
+          </div>
+          
+          <div class="flex flex-col items-center">
+            <span class="text-[0.625rem] text-muted font-mono mb-1">PACER</span>
+            <span class="text-xl font-bold text-muted opacity-80">{{ ghostScore || '?' }}<span class="text-xs font-normal text-muted">%</span></span>
+            <span class="text-sm font-bold text-muted opacity-80 mt-2">{{ ghostRank || '?' }}<span class="text-[0.5rem] font-normal text-muted block">RANK</span></span>
+          </div>
         </div>
       </div>
 
@@ -213,7 +222,7 @@
     </div>
 
     <!-- ── No Trip Selected ── -->
-    <div v-if="!tripFrom && hasMapToken && !historyLoading"
+    <div v-if="!tripFrom && !destLat && hasMapToken && !historyLoading"
          class="absolute inset-0 z-40 bg-void/80 flex items-center justify-center backdrop-blur-sm">
       <div class="text-center p-6 flex flex-col items-center">
         <button @click="router.push(`/trips/${vehicleCode}`)" 
@@ -236,6 +245,7 @@ import { useVehicleHistory } from '@/api/endpoints/history'
 import { useEcoDrivingEvents } from '@/api/endpoints/ecoDriving'
 import { useWeather } from '@/api/endpoints/weather'
 import { analyzeDriver } from '@/api/endpoints/trips'
+import { nestFetch } from '@/api/client'
 import { useUiStore } from '@/stores/uiStore'
 import { useGhostRun } from '@/composables/useGhostRun'
 import { useDriverScore } from '@/composables/useDriverScore'
@@ -263,6 +273,8 @@ const hasMapToken = computed(() => {
 
 // ── Ghost Data Fetch ──
 const fetchedGhostPositions = ref<ApiHistoryEntry[]>([])
+const ghostScore = ref(0)
+const ghostRank = ref('-')
 
 // ── Smart Navigation Reality (Mapbox) ──
 const mapboxRealityPositions = ref<ApiHistoryEntry[]>([])
@@ -349,10 +361,11 @@ async function fetchSmartNavigationRoute() {
 async function fetchGhostReplay() {
   if (!ghostId.value) return
   try {
-    const res = await fetch(`http://localhost:3000/trips/${ghostId.value}/replay`)
-    const json = await res.json()
+    const json = await nestFetch<any>(`/trips/${ghostId.value}/replay`)
     if (json.positions) {
       fetchedGhostPositions.value = json.positions
+      ghostScore.value = json.score || 0
+      ghostRank.value = json.rank || '-'
     }
   } catch(e) { console.error('Ghost replay error', e) }
 }
@@ -379,6 +392,7 @@ const ghostPositions = computed<ApiHistoryEntry[]>(() => {
 })
 
 const historyLoading = computed(() => {
+  if (!hasMapToken.value) return false
   if (destLat.value) return mapboxRealityPositions.value.length === 0
   return historyLoadingRef.value
 })
@@ -433,7 +447,7 @@ const {
 } = useGhostRun(realityPositions, ghostPositions, weather, ecoEventsRef)
 
 // ── Driver Scoring Engine ──
-const { score, tier, tierLabel, timeLossSeconds, aiComment, ecoIncidentCount } = useDriverScore(timeDelta, ecoEventsRef)
+const { score, tier, tierLabel, aiComment, ecoIncidentCount } = useDriverScore(timeDelta, ecoEventsRef)
 
 const showDebrief = ref(true)
 const aiFeedback = ref('')
@@ -443,7 +457,7 @@ async function fetchAiDebrief() {
   if (!ghostId.value) return
   aiFeedbackLoading.value = true
   try {
-    const data = await analyzeDriver(ghostId.value)
+    const data = await analyzeDriver(ghostId.value) as { feedback?: string }
     if (data && data.feedback) {
       aiFeedback.value = data.feedback
     }
@@ -459,7 +473,7 @@ watch(isPlaying, (playing) => {
 })
 
 watch(progressPercent, (pct) => {
-  if (pct >= 100 && historyData.value?.Positions?.length && historyData.value.Positions.length > 2) {
+  if (pct >= 100 && realityPositions.value.length > 2) {
     showDebrief.value = true
     if (!aiFeedback.value) fetchAiDebrief()
   }

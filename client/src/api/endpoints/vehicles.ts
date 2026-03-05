@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/vue-query'
 import { type Ref } from 'vue'
-import { apiFetch } from '@/api/client'
+import { nestFetch } from '@/api/client'
 import type { ApiVehicle, ApiGroup } from '@/api/types'
 
 /**
@@ -9,7 +9,7 @@ import type { ApiVehicle, ApiGroup } from '@/api/types'
 export function useGroups() {
     return useQuery({
         queryKey: ['groups'],
-        queryFn: () => apiFetch<ApiGroup[]>('/groups'),
+        queryFn: () => nestFetch<ApiGroup[]>('/vehicles/groups'),
         staleTime: 60_000,
     })
 }
@@ -21,7 +21,7 @@ export function useGroups() {
 export function useVehicles(groupCode: Ref<string | undefined>) {
     return useQuery({
         queryKey: ['vehicles', groupCode],
-        queryFn: () => apiFetch<ApiVehicle[]>(`/vehicles/group/${groupCode.value}`),
+        queryFn: () => nestFetch<ApiVehicle[]>(`/vehicles/group/${groupCode.value}`),
         enabled: () => !!groupCode.value,
         refetchInterval: 15_000,
     })
@@ -33,7 +33,7 @@ export function useVehicles(groupCode: Ref<string | undefined>) {
 export function useVehicle(vehicleCode: Ref<string | undefined>) {
     return useQuery({
         queryKey: ['vehicle', vehicleCode],
-        queryFn: () => apiFetch<ApiVehicle>(`/vehicle/${vehicleCode.value}`),
+        queryFn: () => nestFetch<ApiVehicle>(`/vehicles/code/${vehicleCode.value}`),
         enabled: () => !!vehicleCode.value && vehicleCode.value !== '_',
         refetchInterval: 10_000,
     })

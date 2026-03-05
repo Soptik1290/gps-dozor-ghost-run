@@ -109,41 +109,42 @@
     </div>
 
     <!-- ── Ghost Nav Modal ── -->
-    <div v-if="showNavModal" class="fixed inset-0 z-50 flex flex-col justify-end pointer-events-none">
-      <div class="absolute inset-0 bg-void/80 backdrop-blur-sm pointer-events-auto" @click="showNavModal = false" />
-      <div class="relative bg-panel-hover border-t border-volt p-6 pointer-events-auto">
+    <div v-if="showNavModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-void/80 backdrop-blur-sm" @click="showNavModal = false" />
+      <div class="relative bg-panel-hover border border-volt p-6 w-full max-w-md shadow-2xl">
         <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-volt text-void text-[0.625rem] font-bold px-3 py-1 font-mono tracking-widest uppercase">
           Select Destination
         </div>
-        <div class="space-y-2 mt-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
           <button
             v-for="dest in destinations"
             :key="dest.key"
             @click="matchDestination(dest)"
-            class="w-full text-left px-4 py-3 border border-panel-border hover:border-volt
-                   text-primary text-sm font-mono transition-colors bg-void hover:bg-panel-hover"
+            class="flex flex-col items-center justify-center p-4 border border-panel-border hover:border-volt
+                   text-primary text-xs font-mono transition-colors bg-void hover:bg-panel-hover text-center"
           >
+            <span class="text-volt mb-2"><Crosshair :size="20"/></span>
             {{ dest.label }}
           </button>
         </div>
-        <button @click="showNavModal = false" class="btn btn--ghost w-full mt-4 text-xs">CANCEL</button>
+        <button @click="showNavModal = false" class="btn btn--ghost w-full mt-6 text-xs">CANCEL</button>
       </div>
     </div>
 
     <!-- ── Match Result Modal ── -->
-    <div v-if="showMatchModal" class="fixed inset-0 z-50 flex flex-col justify-end pointer-events-none">
-      <div class="absolute inset-0 bg-void/80 backdrop-blur-sm pointer-events-auto" @click="showMatchModal = false" />
-      <div class="relative bg-panel-hover border-t border-volt p-6 pointer-events-auto">
+    <div v-if="showMatchModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-void/80 backdrop-blur-sm" @click="showMatchModal = false" />
+      <div class="relative bg-panel-hover border border-volt p-6 w-full max-w-sm shadow-2xl">
         <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-volt text-void text-[0.625rem] font-bold px-3 py-1 font-mono tracking-widest uppercase">
           Ghost Found
         </div>
-        <h2 class="text-xl heading text-primary text-center mb-1">
+        <h2 class="text-xl heading text-primary text-center mb-1 mt-2">
           CHALLENGE {{ matchedGhost?.rank }}
         </h2>
         <div class="text-center font-mono text-xs text-volt uppercase tracking-widest">
           PACER: {{ matchedGhost?.driver?.username || 'UNKNOWN' }}
         </div>
-        <div class="flex gap-3 mt-6">
+        <div class="flex gap-3 mt-8">
           <button @click="showMatchModal = false" class="btn btn--outline flex-1 py-4">DECLINE</button>
           <button @click="acceptChallenge" class="btn btn--solid flex-1 py-4 bg-volt text-void hover:bg-volt-bright">
             ACCEPT
@@ -228,11 +229,11 @@ async function matchDestination(dest: { key: string; label: string; lat: number;
     } else {
       // No ghost, go pacemaker
       const vPlate = auth.assignedVehicle?.plate || 'PACER'
-      router.push({ path: `/trips/${vPlate}`, query: { destLat: dest.lat, destLng: dest.lng } })
+      router.push({ path: `/ghost-run/${vPlate}`, query: { destLat: dest.lat, destLng: dest.lng } })
     }
   } catch {
     const vPlate = auth.assignedVehicle?.plate || 'STATIC'
-    router.push({ path: `/trips/${vPlate}`, query: { destLat: dest.lat, destLng: dest.lng } })
+    router.push({ path: `/ghost-run/${vPlate}`, query: { destLat: dest.lat, destLng: dest.lng } })
   }
 }
 
@@ -241,7 +242,7 @@ function acceptChallenge() {
   const dest = selectedDest.value
   const vPlate = auth.assignedVehicle?.plate || 'CHALLENGER'
   router.push({
-    path: `/trips/${vPlate}`,
+    path: `/ghost-run/${vPlate}`,
     query: { ghostId: matchedGhost.value.id, destLat: dest.lat, destLng: dest.lng }
   })
 }

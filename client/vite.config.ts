@@ -49,6 +49,11 @@ export default defineConfig({
                     // Dev-only: hardcoded demo credentials via proxy
                     Authorization: `Basic ${Buffer.from('api_gpsdozor:yakmwlARdn').toString('base64')}`,
                 },
+                configure: (proxy, _options) => {
+                    proxy.on('proxyRes', (proxyRes, _req, _res) => {
+                        proxyRes.headers['www-authenticate'] = 'x-basic'; // Rename or remove to prevent browser trigger
+                    });
+                },
             },
         },
     },

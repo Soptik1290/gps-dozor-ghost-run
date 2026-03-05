@@ -26,11 +26,23 @@ export class VehiclesController {
         return this.vehiclesService.findAll();
     }
 
+    @Get('groups')
+    @ApiOperation({ summary: 'List all unique vehicle groups' })
+    findAllGroups() {
+        return this.vehiclesService.findAllGroups();
+    }
+
     @Get('group/:groupCode')
     @ApiOperation({ summary: 'List vehicles in a group (by group code)' })
     @ApiResponse({ status: 200, description: 'Array of vehicles in group' })
     findByGroup(@Param('groupCode') groupCode: string) {
         return this.vehiclesService.findByGroup(groupCode);
+    }
+
+    @Get('code/:code')
+    @ApiOperation({ summary: 'Get a single vehicle by code/plate' })
+    findByCode(@Param('code') code: string) {
+        return this.vehiclesService.findByCode(code);
     }
 
     @Get(':id')

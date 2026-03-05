@@ -52,12 +52,15 @@ export async function nestFetch<T>(
         headers['Authorization'] = `Bearer ${auth.token}`
     }
 
+    console.log(`[nestFetch] Request: ${endpoint}`, { hasToken: !!auth.token })
+
     const response = await fetch(`http://localhost:3000${endpoint}`, {
         ...options,
         headers,
     })
 
     if (!response.ok) {
+        console.error(`[nestFetch] Error ${response.status}: ${endpoint}`)
         if (response.status === 401) {
             auth.logout()
             throw new Error('AUTH_EXPIRED')
