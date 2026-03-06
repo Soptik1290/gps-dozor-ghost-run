@@ -1,5 +1,5 @@
 import 'dotenv/config' // Must be first — loads DATABASE_URL for Prisma v7
-import { PrismaClient, Role, VehicleStatus } from '../generated/prisma';
+import { PrismaClient, Role, VehicleStatus } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
