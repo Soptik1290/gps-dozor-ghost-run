@@ -24,6 +24,8 @@ RUN npx prisma generate && npm run build
 
 # ── Build client ──
 WORKDIR /app/client
+ARG VITE_MAPBOX_TOKEN
+ARG VITE_OPENAI_API_KEY
 COPY client/package*.json ./
 # Install with devDependencies so type packages like @types/mapbox__point-geometry are available for vue-tsc
 RUN npm install --include=dev
