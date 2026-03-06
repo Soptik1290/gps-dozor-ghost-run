@@ -281,27 +281,42 @@ export class TripsService {
     }
 
     async getEvaluationFromGpsDozorTrip(tripData: any) {
-        this.logger.log('Creating evaluation from GPS Dozor trip data');
+        this.logger.log(`Creating evaluation from GPS Dozor trip data for ${tripData.VehicleCode || 'unknown'}`);
 
         const startTime = tripData.StartTime || tripData.startTime;
         const finishTime = tripData.FinishTime || tripData.finishTime;
 
         if (!startTime || !finishTime) {
-            throw new Error('Invalid trip data - missing start/finish time');
+            this.logger.warn('Missing start/finish time in trip data', tripData);
+            // Return a minimal valid structure instead of throwing to prevent frontend crash
+            return {
+                trip: { ...tripData, score: 0, rank: 'F' },
+                evaluation: {
+                    score: 0,
+                    rank: 'F',
+                    durationMs: 0,
+                    deltaSeconds: 0,
+                    ghostScore: 0,
+                    fuelConsumption: 0,
+                    ecoEvents: 0,
+                    feedback: "MISSION DATA CORRUPTED: Temporal coordinates missing from uplink.",
+                }
+            };
         }
 
         const start = new Date(startTime);
         const finish = new Date(finishTime);
         const durationMs = finish.getTime() - start.getTime();
 
-        const totalDistance = tripData.TotalDistance || tripData.distanceKm || 0;
-        const avgSpeed = tripData.AverageSpeed || (totalDistance > 0 ? (totalDistance / (durationMs / 3600000)) : 0);
+        const totalDistance = tripData.TotalDistance || tripData.distanceKm || tripData.Distance || 0;
+        const avgSpeed = tripData.AverageSpeed || (totalDistance > 0 && durationMs > 0 ? (totalDistance / (durationMs / 3600000)) : 0);
         const maxSpeed = tripData.MaxSpeed || (avgSpeed * 1.2);
-        const fuel = tripData.FuelConsumed?.Value || tripData.fuelConsumption || 6.5;
+        const fuel = tripData.FuelConsumed?.Value || tripData.fuelConsumption || 0;
 
+        // More robust score calculation
         const score = Math.min(100, Math.round(
-            (avgSpeed / 80) * 50 +
-            (100 - Math.min(30, maxSpeed - 60)) * 0.5 +
+            (Math.min(1, avgSpeed / 90) * 40) + // Efficiency based on normal highway speed
+            (100 - Math.min(40, Math.max(0, maxSpeed - 130))) * 0.4 + // Penalty for overspeeding
             20
         ));
 
@@ -310,17 +325,23 @@ export class TripsService {
         else if (score >= 80) rank = 'A';
         else if (score >= 65) rank = 'B';
         else if (score >= 50) rank = 'C';
+        else rank = 'F';
 
         let weather = 'Clear';
         try {
-            const startLat = tripData.StartPosition?.Latitude || tripData.StartPosition?.latitude || 50.0755;
-            const startLng = tripData.StartPosition?.Longitude || tripData.StartPosition?.longitude || 14.4378;
+            const startLat = tripData.StartPosition?.Latitude || tripData.StartPosition?.latitude || tripData.startLat || 50.0755;
+            const startLng = tripData.StartPosition?.Longitude || tripData.StartPosition?.longitude || tripData.startLng || 14.4378;
             weather = await this.weatherService.getWeatherForTrip(startLat, startLng, start);
         } catch (e) {
-            this.logger.warn('Failed to get weather for trip', e);
+            this.logger.warn('Failed to get weather for trip evaluation', e);
         }
 
-        const feedback = await this.aiService.generateDriverFeedback(weather, score, fuel, 0);
+        let feedback = "No tactical feedback available for this mission profile.";
+        try {
+            feedback = await this.aiService.generateDriverFeedback(weather, score, fuel, tripData.ecoEventsCount || 0);
+        } catch (e) {
+            this.logger.error('AI Service failed to generate driver feedback', e);
+        }
 
         return {
             trip: {
@@ -340,7 +361,7 @@ export class TripsService {
                 deltaSeconds: 0,
                 ghostScore: 0,
                 fuelConsumption: fuel,
-                ecoEvents: 0,
+                ecoEvents: tripData.ecoEventsCount || 0,
                 feedback,
             }
         };

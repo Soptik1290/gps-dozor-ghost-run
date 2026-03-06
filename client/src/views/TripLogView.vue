@@ -1,168 +1,216 @@
 <template>
-  <div class="triplog-view min-h-dvh pb-20 bg-void flex flex-col">
+  <div class="triplog-view min-h-dvh pb-20 bg-void flex flex-col relative overflow-hidden">
+    <!-- ── Scanline Overlay ── -->
+    <div class="absolute inset-0 pointer-events-none z-50 opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]"></div>
+
     <!-- ── Header ── -->
-    <header class="glass-panel border-b border-panel-border px-4 py-3">
-      <button @click="router.push(auth.homeRoute)" class="text-muted text-[0.625rem] font-mono uppercase tracking-wider mb-1 flex items-center gap-1">
-        <ArrowLeft :size="12" /> BACK
+    <header class="glass-panel border-b border-panel-border px-4 py-4 sticky top-0 z-40 backdrop-blur-xl">
+      <button @click="router.push(auth.homeRoute)" class="text-muted text-[0.6rem] font-mono uppercase tracking-[0.3em] mb-2 flex items-center gap-1.5 opacity-70 hover:opacity-100 transition-opacity">
+        <ArrowLeft :size="10" /> UPLINK ABORT
       </button>
       <div class="flex items-center justify-between">
-        <h1 class="heading text-lg text-primary">{{ isFleet ? 'FLEET OPERATIONS' : 'TRIP LOG' }}</h1>
-        <span class="text-muted text-[0.625rem] font-mono">{{ isFleet ? 'ALL VEHICLES' : vehicleCodeFromRoute }}</span>
+        <div class="flex flex-col">
+          <h1 class="heading text-xl text-primary tracking-tighter">{{ isFleet ? 'FLEET OPERATIONS' : 'MISSION ARCHIVE' }}</h1>
+          <div class="flex items-center gap-2 mt-0.5">
+             <span class="w-1.5 h-1.5 rounded-full bg-volt animate-pulse shadow-[0_0_5px_var(--color-volt)]"></span>
+             <span class="text-[0.55rem] font-mono text-muted uppercase tracking-widest">{{ isFleet ? 'GLOBAL FLEET FEED' : `${vehicleCodeFromRoute} // PILOT LOG` }}</span>
+          </div>
+        </div>
+        <div v-if="!isFleet" class="flex flex-col items-end">
+           <span class="text-[0.45rem] font-mono text-muted uppercase tracking-[0.2em] mb-0.5">Security Level</span>
+           <span class="text-[0.6rem] font-mono text-primary font-bold tracking-widest">ALPHA-9</span>
+        </div>
       </div>
     </header>
 
     <!-- ── Fleet Dashboard (Admin Only) ── -->
-    <div v-if="isFleet && trips && trips.length > 0" class="p-4 bg-surface/30 border-b border-panel-border">
+    <div v-if="isFleet && trips && trips.length > 0" class="p-4 bg-surface/30 border-b border-panel-border animate-in fade-in duration-500">
       <div class="grid grid-cols-3 gap-2 mb-4">
-        <div class="glass-panel p-2 text-center border border-panel-border/50">
-          <div class="text-volt text-lg font-bold">{{ fleetStats.distance.toFixed(0) }}</div>
-          <div class="text-[0.5rem] font-mono text-muted uppercase">TOTAL KM</div>
+        <div class="glass-panel p-3 text-center border border-panel-border/50 bg-void/40">
+          <div class="text-volt text-lg font-bold tracking-tighter">{{ fleetStats.distance.toFixed(0) }}</div>
+          <div class="text-[0.45rem] font-mono text-muted uppercase tracking-widest">FLEET DIST</div>
         </div>
-        <div class="glass-panel p-2 text-center border border-panel-border/50">
-          <div class="text-primary text-lg font-bold">{{ fleetStats.activeVehicles }}</div>
-          <div class="text-[0.5rem] font-mono text-muted uppercase">ACTIVE CARS</div>
+        <div class="glass-panel p-3 text-center border border-panel-border/50 bg-void/40">
+          <div class="text-primary text-lg font-bold tracking-tighter">{{ fleetStats.activeVehicles }}</div>
+          <div class="text-[0.45rem] font-mono text-muted uppercase tracking-widest">DEPLOYED</div>
         </div>
-        <div class="glass-panel p-2 text-center border border-panel-border/50">
-          <div class="text-warning text-lg font-bold">{{ fleetStats.avgScore }}</div>
-          <div class="text-[0.5rem] font-mono text-muted uppercase">AVG SCORE</div>
+        <div class="glass-panel p-3 text-center border border-panel-border/50 bg-void/40">
+          <div class="text-warning text-lg font-bold tracking-tighter">{{ fleetStats.avgScore }}%</div>
+          <div class="text-[0.45rem] font-mono text-muted uppercase tracking-widest">EFFICIENCY</div>
         </div>
       </div>
 
       <!-- 7-Day Distance Chart -->
-      <div class="glass-panel p-3 border border-panel-border/30">
-        <div class="flex items-center justify-between mb-2">
-           <h3 class="text-[0.625rem] font-mono text-muted uppercase tracking-widest">7-Day Fleet Activity</h3>
-           <div class="text-[0.5rem] font-mono text-volt bg-volt/10 px-1 border border-volt/20 rounded">LIVE</div>
+      <div class="glass-panel p-4 border border-panel-border/30 bg-void/20">
+        <div class="flex items-center justify-between mb-3">
+           <h3 class="text-[0.55rem] font-mono text-muted uppercase tracking-[0.3em]">Fleet Activity Matrix</h3>
+           <div class="text-[0.45rem] font-mono text-volt border border-volt/30 px-1.5 py-0.5 rounded-sm uppercase tracking-widest">Realtime Sync</div>
         </div>
-        <div class="flex items-end gap-1 h-12">
+        <div class="flex items-end gap-1.5 h-16">
           <div 
             v-for="day in sevenDayData" 
             :key="day.date"
-            class="flex-1 bg-volt/20 hover:bg-volt/40 transition-colors relative group"
-            :style="{ height: `${Math.max(10, (day.distance / maxFleetDist) * 100)}%` }"
+            class="flex-1 bg-volt/10 hover:bg-volt/30 transition-all relative group rounded-t-sm"
+            :style="{ height: `${Math.max(15, (day.distance / maxFleetDist) * 100)}%` }"
           >
-            <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-void border border-panel-border text-primary text-[0.5rem] px-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-              {{ day.distance.toFixed(0) }} km
+            <div class="absolute -top-7 left-1/2 -translate-x-1/2 bg-surface border border-panel-border text-primary text-[0.5rem] px-2 py-0.5 rounded shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 font-mono">
+              {{ day.distance.toFixed(0) }} KM
             </div>
             <div 
-              class="absolute bottom-0 left-0 right-0 bg-volt" 
-              :style="{ height: '1.5px' }"
+              class="absolute bottom-0 left-0 right-0 bg-volt shadow-[0_0_10px_rgba(206,255,0,0.5)]" 
+              :style="{ height: '2px' }"
             ></div>
           </div>
-        </div>
-        <div class="flex justify-between mt-1 text-[0.5rem] font-mono text-dim">
-          <span>{{ sevenDayData[0]?.label }}</span>
-          <span>TODAY</span>
         </div>
       </div>
     </div>
 
-    <!-- ── Date Selector & Filter ── -->
-    <div class="flex flex-col border-b border-panel-border bg-surface/10">
+    <!-- ── Driver Stats (Personal) ── -->
+    <div v-else-if="!isFleet && trips" class="p-4 bg-surface/30 border-b border-panel-border animate-in slide-in-from-top-4 duration-700">
+       <div class="flex items-center justify-between mb-4">
+          <span class="text-[0.6rem] font-mono text-muted uppercase tracking-[0.3em]">Pilot Performance Index</span>
+          <span class="text-[0.5rem] font-mono text-volt bg-volt/5 px-2 py-0.5 border border-volt/20 rounded uppercase">Verified</span>
+       </div>
+       <div class="grid grid-cols-2 gap-3">
+          <div class="glass-panel p-4 border-l-2 border-volt bg-void/60 flex flex-col gap-1 items-center justify-center">
+             <span class="text-2xl font-black text-primary tracking-tighter">{{ trips.length }}</span>
+             <span class="text-[0.5rem] font-mono text-muted uppercase tracking-widest">Missions Run</span>
+          </div>
+          <div class="glass-panel p-4 border-l-2 border-primary bg-void/60 flex flex-col gap-1 items-center justify-center">
+             <span class="text-2xl font-black text-primary tracking-tighter">{{ fleetStats.avgScore }}%</span>
+             <span class="text-[0.5rem] font-mono text-muted uppercase tracking-widest">Avg Stability</span>
+          </div>
+       </div>
+    </div>
+
+    <!-- ── Date Selector ── -->
+    <div class="flex flex-col border-b border-panel-border bg-surface/10 relative z-10">
       <div class="flex items-center gap-2 px-4 py-3">
-        <button @click="prevDay" class="btn btn--ghost !p-2 !min-h-[36px] !min-w-[36px]">
-          <ChevronLeft :size="16" />
+        <button @click="prevDay" class="btn btn--ghost !p-2 opacity-60 hover:opacity-100">
+          <ChevronLeft :size="18" />
         </button>
-        <div class="flex-1 text-center text-sm font-mono text-primary">
-          {{ formattedDate }}
+        <div class="flex-1 text-center">
+          <div class="text-[0.45rem] font-mono text-muted uppercase tracking-[0.4em] mb-0.5">Chronos Sector</div>
+          <div class="text-sm font-mono text-primary font-bold tracking-widest uppercase">
+            {{ formattedDate }}
+          </div>
         </div>
-        <button @click="nextDay" class="btn btn--ghost !p-2 !min-h-[36px] !min-w-[36px]">
-          <ChevronRight :size="16" />
+        <button @click="nextDay" class="btn btn--ghost !p-2 opacity-60 hover:opacity-100">
+          <ChevronRight :size="18" />
         </button>
       </div>
 
       <!-- Vehicle Filter (Fleet Mode Only) -->
-      <div v-if="isFleet" class="px-4 pb-3">
+      <div v-if="isFleet" class="px-4 pb-4">
         <div class="relative">
           <select 
             v-model="filterVehicle" 
-            class="w-full bg-void border border-panel-border text-xs font-mono p-2 text-primary focus:border-volt outline-none appearance-none cursor-pointer"
+            class="w-full bg-void/80 border border-panel-border/50 text-[0.65rem] font-mono px-4 py-2.5 text-primary focus:border-volt/50 outline-none appearance-none cursor-pointer tracking-widest rounded-none"
           >
-            <option value="">ALL VEHICLES</option>
+            <option value="">ALL FLEET ASSETS</option>
             <option v-for="v in availableVehicles" :key="v.Code" :value="v.Code">
-               {{ v.Name }} ({{ v.Code }})
+               {{ v.Name }} [{{ v.Code }}]
             </option>
           </select>
-          <div class="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-muted">
-            <Filter :size="10" />
+          <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-muted opacity-50">
+            <Filter :size="12" />
           </div>
         </div>
       </div>
     </div>
 
     <!-- ── Loading & Scanning ── -->
-    <div v-if="tripsLoading || isScanning" class="flex flex-col items-center justify-center py-20 flex-1">
-      <div class="text-volt text-sm font-mono animate-pulse-neon mb-2">
-        {{ isScanning ? 'SEARCHING FOR DATA...' : 'LOADING TRIPS...' }}
+    <div v-if="tripsLoading || isScanning" class="flex flex-col items-center justify-center py-24 flex-1 relative z-10">
+      <div class="w-12 h-12 border-2 border-volt/10 border-t-volt rounded-full animate-spin mb-6"></div>
+      <div class="text-volt text-xs font-mono tracking-[0.2em] animate-pulse-neon mb-2">
+        {{ isScanning ? 'QUERYING GPS DOZOR UPLINK...' : 'DECRYPTING MISSION CACHE' }}
       </div>
-      <div v-if="isScanning" class="text-muted text-[0.625rem] font-mono tracking-widest uppercase">
-        SCANNING PAST {{ autoScanDays }} DAYS
+      <div v-if="isScanning" class="text-muted text-[0.55rem] font-mono tracking-[0.3em] uppercase opacity-50">
+        SCANNING SECTOR MINUS {{ autoScanDays }} DAYS
       </div>
     </div>
 
     <!-- ── Trip List ── -->
-    <div v-else class="scroll-fade overflow-y-auto flex-1 h-full">
+    <div v-else class="scroll-fade overflow-y-auto flex-1 h-full relative z-10">
       <div
         v-for="(trip, index) in filteredTrips"
         :key="index"
-        class="trip-card glass-panel glass-panel--hover border-b border-panel-border
-               px-4 py-3 cursor-pointer active:bg-panel-hover transition-all"
+        class="trip-card border-b border-panel-border px-5 py-4 cursor-pointer active:bg-panel-hover transition-all relative overflow-hidden group"
         @click="selectTrip(trip)"
       >
-        <!-- Vehicle Badge (Fleet Mode) -->
-        <div v-if="isFleet && !filterVehicle" class="flex items-center gap-2 mb-2">
-            <div class="px-1.5 py-0.5 bg-void border border-panel-border rounded text-[0.55rem] font-mono text-volt uppercase tracking-tighter">
-              {{ trip.VehicleName || trip.VehicleCode || trip.vehicleCode }}
-            </div>
+        <!-- Background Hover Effect -->
+        <div class="absolute inset-0 bg-gradient-to-r from-volt/0 to-volt/5 translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
+
+        <!-- Header Info -->
+        <div class="flex items-center justify-between mb-3 relative z-10">
+           <div class="flex items-center gap-2">
+              <span class="text-[0.7rem] font-mono text-primary font-black tracking-widest">
+                <span class="text-volt">{{ formatTime(trip.startTime || trip.StartTime) }}</span> 
+                <span class="mx-1 opacity-30">→</span> 
+                <span>{{ formatTime(trip.endTime || trip.FinishTime) }}</span>
+              </span>
+              <div class="px-1.5 py-0.5 bg-volt/10 border border-volt/30 rounded-sm text-[0.45rem] font-bold text-volt uppercase tracking-widest">
+                {{ isFleet && !filterVehicle ? (trip.VehicleName || trip.VehicleCode || trip.vehicleCode) : 'LINKED' }}
+              </div>
+           </div>
+           <span class="text-muted text-[0.55rem] font-mono tracking-widest uppercase opacity-70">
+             {{ trip.TripLength?.trim() || formatDuration(trip.startTime || trip.StartTime, trip.endTime || trip.FinishTime) }}
+           </span>
         </div>
 
-        <!-- Time & Route -->
-        <div class="flex items-center justify-between mb-2">
-          <div class="text-xs font-mono text-primary font-bold">
-            <span class="text-volt">{{ formatTime(trip.startTime || trip.StartTime) }}</span> → <span>{{ formatTime(trip.endTime || trip.FinishTime) }}</span>
-          </div>
-          <span class="text-muted text-[0.625rem] font-mono">
-            {{ trip.TripLength?.trim() || formatDuration(trip.startTime || trip.StartTime, trip.endTime || trip.FinishTime) }}
-          </span>
+        <!-- Route Path -->
+        <div class="space-y-1 mb-4 relative z-10">
+           <div class="flex items-start gap-2">
+              <div class="mt-1 w-1.5 h-1.5 rounded-full bg-muted opacity-30 flex-shrink-0"></div>
+              <div class="text-[0.65rem] text-primary/80 font-mono truncate tracking-tight">
+                {{ trip.startAddress || trip.StartAddress || 'GPS MISSION START' }}
+              </div>
+           </div>
+           <div class="flex items-start gap-2">
+              <div class="mt-1 w-1.5 h-1.5 rounded-full bg-volt flex-shrink-0 shadow-[0_0_5px_var(--color-volt)]"></div>
+              <div class="text-[0.65rem] text-primary font-mono truncate font-bold tracking-tight">
+                {{ trip.endAddress || trip.destinationName || trip.FinishAddress || 'GPS MISSION END' }}
+              </div>
+           </div>
         </div>
 
-        <!-- Addresses -->
-        <div class="text-[0.6875rem] text-primary font-mono truncate mb-1">
-          {{ trip.startAddress || trip.StartAddress || 'GPS MISSION START' }}
-        </div>
-        <div class="text-[0.6875rem] text-muted font-mono truncate mb-2 opacity-60">
-          → {{ trip.endAddress || trip.destinationName || trip.FinishAddress || 'GPS MISSION END' }}
-        </div>
-
-        <!-- Stats row -->
-        <div class="flex items-center gap-4 text-[0.625rem] font-mono">
-          <div class="data-label">
-            <span class="data-label__key text-muted mr-1 tracking-tighter">DIST</span>
-            <span class="data-label__value text-primary font-bold">{{ (trip.distanceKm || trip.TotalDistance || 0).toFixed(1) }} km</span>
+        <!-- Telemetry Row -->
+        <div class="flex items-center gap-6 text-[0.55rem] font-mono relative z-10 border-t border-panel-border/30 pt-3">
+          <div class="flex items-center group/item">
+            <span class="text-muted mr-1.5 tracking-widest uppercase opacity-50">Dist</span>
+            <span class="text-primary font-bold group-hover/item:text-volt transition-colors">{{ (trip.distanceKm || trip.TotalDistance || 0).toFixed(1) }} <span class="opacity-40 font-normal">KM</span></span>
           </div>
-          <div class="data-label">
-            <span class="data-label__key text-muted mr-1 tracking-tighter">AVG</span>
-            <span class="data-label__value text-primary font-bold">{{ trip.AverageSpeed || Math.round(((trip.distanceKm || trip.TotalDistance || 0) / (Math.max(1, (new Date(trip.endTime || trip.FinishTime || 0).getTime() - new Date(trip.startTime || trip.StartTime || 0).getTime())) / 3600000))) || '--' }} km/h</span>
+          <div class="flex items-center group/item">
+            <span class="text-muted mr-1.5 tracking-widest uppercase opacity-50">Avg</span>
+            <span class="text-primary font-bold">{{ trip.AverageSpeed || Math.round(((trip.distanceKm || trip.TotalDistance || 0) / (Math.max(1, (new Date(trip.endTime || trip.FinishTime || 0).getTime() - new Date(trip.startTime || trip.StartTime || 0).getTime())) / 3600000))) || '--' }} <span class="opacity-40 font-normal">KM/H</span></span>
           </div>
-          <div class="data-label">
-            <span class="data-label__key text-muted mr-1 tracking-tighter">MAX</span>
-            <span class="data-label__value text-warning font-bold">{{ trip.MaxSpeed || '--' }} km/h</span>
+          <div class="flex items-center group/item ml-auto">
+            <span class="text-[0.45rem] font-bold text-muted uppercase tracking-[0.2em] opacity-40 mr-2 italic">Telemetry Status:</span>
+            <span class="text-[0.45rem] font-bold text-volt uppercase tracking-widest">Encrypted</span>
           </div>
         </div>
 
-        <!-- Management Summary Action -->
-        <div class="border-t border-panel-border pt-2 mt-3" @click.stop>
-          <button v-if="expandedTripIndex !== index" @click.stop="fetchAdminSummary(index)" class="text-[0.625rem] font-mono text-volt hover:text-primary transition-colors flex items-center gap-1 opacity-70 hover:opacity-100 uppercase">
-            <Sparkles :size="10" /> Generate Management Summary
+        <!-- AI Evaluation Action -->
+        <div v-if="!isFleet" class="mt-4 relative z-10" @click.stop>
+          <button 
+            v-if="expandedTripIndex !== index" 
+            @click.stop="fetchAdminSummary(index)" 
+            class="w-full flex items-center justify-between px-3 py-2 bg-void border border-panel-border/40 hover:border-volt/40 transition-all group/btn"
+          >
+            <span class="text-[0.5rem] font-mono text-muted group-hover/btn:text-primary transition-colors uppercase tracking-[0.25em]">Request Tactical Debrief</span>
+            <Sparkles :size="10" class="text-volt opacity-50 group-hover/btn:opacity-100 group-hover/btn:scale-110 transition-all" />
           </button>
           
-          <div v-if="expandedTripIndex === index" class="bg-black/40 border-l-2 border-volt p-3 mt-2 rounded-r">
-             <div class="text-[0.5625rem] font-mono text-volt uppercase tracking-wider mb-2 flex items-center gap-2">
-               MANAGEMENT SUMMARY
-               <span v-if="adminFeedbackLoading" class="animate-pulse text-muted text-[0.5rem]">ANALYZING...</span>
-             </div>
-             <div class="text-xs font-mono leading-relaxed text-blue-100/90 whitespace-pre-wrap">
-               <span>{{ adminFeedback || '...' }}</span>
+          <div v-if="expandedTripIndex === index" class="mt-2 relative">
+             <div class="absolute inset-0 bg-volt opacity-[0.02] pointer-events-none"></div>
+             <div class="border-l-2 border-volt p-4 bg-void/80 backdrop-blur-sm border border-panel-border/30 rounded-r-lg">
+                <div class="text-[0.5rem] font-mono text-volt uppercase tracking-[0.3em] mb-3 flex items-center justify-between">
+                  <span>MISSION EVALUATION FEED</span>
+                  <span v-if="adminFeedbackLoading" class="animate-pulse">DECRYPTING...</span>
+                </div>
+                <div class="text-[0.65rem] font-mono leading-relaxed text-blue-100/80 whitespace-pre-wrap">
+                  {{ adminFeedback || 'ESTABLISHING SECURE CONNECTION...' }}
+                </div>
              </div>
           </div>
         </div>
@@ -396,11 +444,43 @@ async function fetchAdminSummary(index: number) {
 .scroll-fade {
   mask-image: linear-gradient(to bottom, black 95%, transparent 100%);
 }
-.data-label {
-    display: flex;
-    align-items: center;
-}
+
 .trip-card {
     border-color: var(--color-panel-border);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.trip-card:hover {
+    border-color: rgba(206, 255, 0, 0.3);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-in-from-top-4 {
+  from { 
+    opacity: 0;
+    transform: translateY(-10px); 
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0); 
+  }
+}
+
+.animate-in {
+  animation-fill-mode: both;
+}
+
+/* Custom glow for Volt elements */
+.text-volt {
+  text-shadow: 0 0 8px rgba(206, 255, 0, 0.4);
+}
+
+.shadow-volt {
+  box-shadow: 0 0 15px rgba(206, 255, 0, 0.2);
 }
 </style>
