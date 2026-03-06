@@ -26,7 +26,8 @@
                 "./src/*"
             ]
         },
-        "types": []
+        "types": [],
+        "typeRoots": []
     },
     "include": [
         "src/**/*.ts",
