@@ -38,7 +38,7 @@ RUN npm prune --omit=dev
 # ── Stage 2: Runtime with Nginx + Node ──
 FROM node:20-slim AS runner
 
-RUN apt-get update && apt-get install -y nginx openssl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y nginx openssl gettext-base && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -59,6 +59,6 @@ EXPOSE 80
 # Use a entrypoint script to substitute PORT in Nginx config at runtime
 # Render provides $PORT, and we want Nginx to listen on it.
 # We also ensure the Nest backend runs on a different internal port (3000)
-# which Nginx then proxies to via 127.0.0.1:3000.
-CMD /bin/bash -c "sed -i \"s/\$PORT/${PORT:-80}/g\" /etc/nginx/conf.d/default.conf && service nginx start && PORT=3000 node server/dist/src/main.js"
+# which Nginx then proxies to.
+CMD /bin/bash -c "envsubst '\$PORT' < /etc/nginx/conf.d/default.conf > /etc/nginx/conf.d/default.conf.tmp && mv /etc/nginx/conf.d/default.conf.tmp /etc/nginx/conf.d/default.conf && service nginx start && PORT=3000 node server/dist/src/main.js"
 
