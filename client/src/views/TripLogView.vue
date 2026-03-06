@@ -4,61 +4,61 @@
     <div class="absolute inset-0 pointer-events-none z-50 opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]"></div>
 
     <!-- ── Header ── -->
-    <header class="glass-panel border-b border-panel-border px-4 py-4 sticky top-0 z-40 backdrop-blur-xl">
-      <button @click="router.push(auth.homeRoute)" class="text-muted text-[0.6rem] font-mono uppercase tracking-[0.3em] mb-2 flex items-center gap-1.5 opacity-70 hover:opacity-100 transition-opacity">
-        <ArrowLeft :size="10" /> UPLINK ABORT
+    <header class="glass-panel border-b border-panel-border px-6 py-6 sticky top-0 z-40 backdrop-blur-xl">
+      <button @click="router.push(auth.homeRoute)" class="text-muted text-[0.8rem] font-mono uppercase tracking-[0.3em] mb-3 flex items-center gap-2 opacity-70 hover:opacity-100 transition-opacity">
+        <ArrowLeft :size="14" /> UPLINK ABORT
       </button>
       <div class="flex items-center justify-between">
         <div class="flex flex-col">
-          <h1 class="heading text-xl text-primary tracking-tighter">{{ isFleet ? 'FLEET OPERATIONS' : 'MISSION ARCHIVE' }}</h1>
-          <div class="flex items-center gap-2 mt-0.5">
-             <span class="w-1.5 h-1.5 rounded-full bg-volt animate-pulse shadow-[0_0_5px_var(--color-volt)]"></span>
-             <span class="text-[0.55rem] font-mono text-muted uppercase tracking-widest">{{ isFleet ? 'GLOBAL FLEET FEED' : `${vehicleCodeFromRoute} // PILOT LOG` }}</span>
+          <h1 class="heading text-3xl text-primary tracking-tighter">{{ isFleet ? 'FLEET OPERATIONS' : 'MISSION ARCHIVE' }}</h1>
+          <div class="flex items-center gap-3 mt-1.5">
+             <span class="w-2 h-2 rounded-full bg-volt animate-pulse shadow-[0_0_8px_var(--color-volt)]"></span>
+             <span class="text-[0.75rem] font-mono text-muted uppercase tracking-widest">{{ isFleet ? 'GLOBAL FLEET FEED' : `${vehicleCodeFromRoute} // PILOT LOG` }}</span>
           </div>
         </div>
         <div v-if="!isFleet" class="flex flex-col items-end">
-           <span class="text-[0.45rem] font-mono text-muted uppercase tracking-[0.2em] mb-0.5">Security Level</span>
-           <span class="text-[0.6rem] font-mono text-primary font-bold tracking-widest">ALPHA-9</span>
+           <span class="text-[0.6rem] font-mono text-muted uppercase tracking-[0.3em] mb-1">Security Level</span>
+           <span class="text-[0.85rem] font-mono text-primary font-black tracking-widest">ALPHA-9</span>
         </div>
       </div>
     </header>
 
     <!-- ── Fleet Dashboard (Admin Only) ── -->
-    <div v-if="isFleet && trips && trips.length > 0" class="p-4 bg-surface/30 border-b border-panel-border animate-in fade-in duration-500">
-      <div class="grid grid-cols-3 gap-2 mb-4">
-        <div class="glass-panel p-3 text-center border border-panel-border/50 bg-void/40">
-          <div class="text-volt text-lg font-bold tracking-tighter">{{ fleetStats.distance.toFixed(0) }}</div>
-          <div class="text-[0.45rem] font-mono text-muted uppercase tracking-widest">FLEET DIST</div>
+    <div v-if="isFleet && trips && trips.length > 0" class="p-6 bg-surface/30 border-b border-panel-border animate-in fade-in duration-500">
+      <div class="grid grid-cols-3 gap-3 mb-6">
+        <div class="glass-panel p-5 text-center border border-panel-border/50 bg-void/40">
+          <div class="text-volt text-2xl font-black tracking-tighter">{{ fleetStats.distance.toFixed(0) }}</div>
+          <div class="text-[0.6rem] font-mono text-muted uppercase tracking-widest mt-1">FLEET DIST</div>
         </div>
-        <div class="glass-panel p-3 text-center border border-panel-border/50 bg-void/40">
-          <div class="text-primary text-lg font-bold tracking-tighter">{{ fleetStats.activeVehicles }}</div>
-          <div class="text-[0.45rem] font-mono text-muted uppercase tracking-widest">DEPLOYED</div>
+        <div class="glass-panel p-5 text-center border border-panel-border/50 bg-void/40">
+          <div class="text-primary text-2xl font-black tracking-tighter">{{ fleetStats.activeVehicles }}</div>
+          <div class="text-[0.6rem] font-mono text-muted uppercase tracking-widest mt-1">DEPLOYED</div>
         </div>
-        <div class="glass-panel p-3 text-center border border-panel-border/50 bg-void/40">
-          <div class="text-warning text-lg font-bold tracking-tighter">{{ fleetStats.avgScore }}%</div>
-          <div class="text-[0.45rem] font-mono text-muted uppercase tracking-widest">EFFICIENCY</div>
+        <div class="glass-panel p-5 text-center border border-panel-border/50 bg-void/40">
+          <div class="text-warning text-2xl font-black tracking-tighter">{{ fleetStats.avgScore }}%</div>
+          <div class="text-[0.6rem] font-mono text-muted uppercase tracking-widest mt-1">EFFICIENCY</div>
         </div>
       </div>
 
       <!-- 7-Day Distance Chart -->
-      <div class="glass-panel p-4 border border-panel-border/30 bg-void/20">
-        <div class="flex items-center justify-between mb-3">
-           <h3 class="text-[0.55rem] font-mono text-muted uppercase tracking-[0.3em]">Fleet Activity Matrix</h3>
-           <div class="text-[0.45rem] font-mono text-volt border border-volt/30 px-1.5 py-0.5 rounded-sm uppercase tracking-widest">Realtime Sync</div>
+      <div class="glass-panel p-6 border border-panel-border/30 bg-void/20">
+        <div class="flex items-center justify-between mb-4">
+           <h3 class="text-[0.7rem] font-mono text-muted uppercase tracking-[0.3em]">Fleet Activity Matrix</h3>
+           <div class="text-[0.6rem] font-mono text-volt border border-volt/30 px-2.5 py-1 rounded-sm uppercase tracking-widest">Realtime Sync</div>
         </div>
-        <div class="flex items-end gap-1.5 h-16">
+        <div class="flex items-end gap-2 h-24">
           <div 
             v-for="day in sevenDayData" 
             :key="day.date"
             class="flex-1 bg-volt/10 hover:bg-volt/30 transition-all relative group rounded-t-sm"
             :style="{ height: `${Math.max(15, (day.distance / maxFleetDist) * 100)}%` }"
           >
-            <div class="absolute -top-7 left-1/2 -translate-x-1/2 bg-surface border border-panel-border text-primary text-[0.5rem] px-2 py-0.5 rounded shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 font-mono">
+            <div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-surface border border-panel-border text-primary text-[0.75rem] px-3 py-1 rounded shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 font-mono font-bold">
               {{ day.distance.toFixed(0) }} KM
             </div>
             <div 
-              class="absolute bottom-0 left-0 right-0 bg-volt shadow-[0_0_10px_rgba(206,255,0,0.5)]" 
-              :style="{ height: '2px' }"
+              class="absolute bottom-0 left-0 right-0 bg-volt shadow-[0_0_15px_rgba(206,255,0,0.6)]" 
+              :style="{ height: '3px' }"
             ></div>
           </div>
         </div>
@@ -66,66 +66,66 @@
     </div>
 
     <!-- ── Driver Stats (Personal) ── -->
-    <div v-else-if="!isFleet && trips" class="p-4 bg-surface/30 border-b border-panel-border animate-in slide-in-from-top-4 duration-700">
-       <div class="flex items-center justify-between mb-4">
-          <span class="text-[0.6rem] font-mono text-muted uppercase tracking-[0.3em]">Pilot Performance Index</span>
-          <span class="text-[0.5rem] font-mono text-volt bg-volt/5 px-2 py-0.5 border border-volt/20 rounded uppercase">Verified</span>
+    <div v-else-if="!isFleet && trips" class="p-6 bg-surface/30 border-b border-panel-border animate-in slide-in-from-top-4 duration-700">
+       <div class="flex items-center justify-between mb-6">
+          <span class="text-[0.8rem] font-mono text-muted uppercase tracking-[0.4em]">Pilot Performance Index</span>
+          <span class="text-[0.65rem] font-mono text-volt bg-volt/5 px-3 py-1 border border-volt/20 rounded uppercase font-bold">Verified Status</span>
        </div>
-       <div class="grid grid-cols-2 gap-3">
-          <div class="glass-panel p-4 border-l-2 border-volt bg-void/60 flex flex-col gap-1 items-center justify-center">
-             <span class="text-2xl font-black text-primary tracking-tighter">{{ trips.length }}</span>
-             <span class="text-[0.5rem] font-mono text-muted uppercase tracking-widest">Missions Run</span>
+       <div class="grid grid-cols-2 gap-4">
+          <div class="glass-panel p-6 border-l-4 border-volt bg-void/60 flex flex-col gap-2 items-center justify-center">
+             <span class="text-4xl font-black text-primary tracking-tighter">{{ trips.length }}</span>
+             <span class="text-[0.7rem] font-mono text-muted uppercase tracking-widest font-bold">Missions Run</span>
           </div>
-          <div class="glass-panel p-4 border-l-2 border-primary bg-void/60 flex flex-col gap-1 items-center justify-center">
-             <span class="text-2xl font-black text-primary tracking-tighter">{{ fleetStats.avgScore }}%</span>
-             <span class="text-[0.5rem] font-mono text-muted uppercase tracking-widest">Avg Stability</span>
+          <div class="glass-panel p-6 border-l-4 border-primary bg-void/60 flex flex-col gap-2 items-center justify-center">
+             <span class="text-4xl font-black text-primary tracking-tighter">{{ fleetStats.avgScore }}%</span>
+             <span class="text-[0.7rem] font-mono text-muted uppercase tracking-widest font-bold">Avg Stability</span>
           </div>
        </div>
     </div>
 
     <!-- ── Date Selector ── -->
     <div class="flex flex-col border-b border-panel-border bg-surface/10 relative z-10">
-      <div class="flex items-center gap-2 px-4 py-3">
-        <button @click="prevDay" class="btn btn--ghost !p-2 opacity-60 hover:opacity-100">
-          <ChevronLeft :size="18" />
+      <div class="flex items-center gap-4 px-6 py-5">
+        <button @click="prevDay" class="btn btn--ghost !p-3 opacity-60 hover:opacity-100 transition-all">
+          <ChevronLeft :size="24" />
         </button>
         <div class="flex-1 text-center">
-          <div class="text-[0.45rem] font-mono text-muted uppercase tracking-[0.4em] mb-0.5">Chronos Sector</div>
-          <div class="text-sm font-mono text-primary font-bold tracking-widest uppercase">
+          <div class="text-[0.65rem] font-mono text-muted uppercase tracking-[0.5em] mb-1.5 font-bold">Chronos Sector</div>
+          <div class="text-lg font-mono text-primary font-black tracking-[0.2em] uppercase">
             {{ formattedDate }}
           </div>
         </div>
-        <button @click="nextDay" class="btn btn--ghost !p-2 opacity-60 hover:opacity-100">
-          <ChevronRight :size="18" />
+        <button @click="nextDay" class="btn btn--ghost !p-3 opacity-60 hover:opacity-100 transition-all">
+          <ChevronRight :size="24" />
         </button>
       </div>
 
       <!-- Vehicle Filter (Fleet Mode Only) -->
-      <div v-if="isFleet" class="px-4 pb-4">
+      <div v-if="isFleet" class="px-6 pb-6">
         <div class="relative">
           <select 
             v-model="filterVehicle" 
-            class="w-full bg-void/80 border border-panel-border/50 text-[0.65rem] font-mono px-4 py-2.5 text-primary focus:border-volt/50 outline-none appearance-none cursor-pointer tracking-widest rounded-none"
+            class="w-full bg-void/80 border border-panel-border/50 text-[0.85rem] font-mono px-6 py-4 text-primary focus:border-volt/50 outline-none appearance-none cursor-pointer tracking-[0.1em] rounded-none"
           >
             <option value="">ALL FLEET ASSETS</option>
             <option v-for="v in availableVehicles" :key="v.Code" :value="v.Code">
                {{ v.Name }} [{{ v.Code }}]
             </option>
           </select>
-          <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-muted opacity-50">
-            <Filter :size="12" />
+          <div class="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-muted opacity-50">
+            <Filter :size="16" />
           </div>
         </div>
       </div>
     </div>
 
     <!-- ── Loading & Scanning ── -->
-    <div v-if="tripsLoading || isScanning" class="flex flex-col items-center justify-center py-24 flex-1 relative z-10">
-      <div class="w-12 h-12 border-2 border-volt/10 border-t-volt rounded-full animate-spin mb-6"></div>
-      <div class="text-volt text-xs font-mono tracking-[0.2em] animate-pulse-neon mb-2">
+    <div v-if="tripsLoading || isScanning" class="flex flex-col items-center justify-center py-32 flex-1 relative z-10">
+      <div class="w-16 h-16 border-4 border-volt/10 border-t-volt rounded-full animate-spin mb-8"></div>
+      <div class="text-volt text-sm font-mono tracking-[0.3em] animate-pulse-neon mb-3">
         {{ isScanning ? 'QUERYING GPS DOZOR UPLINK...' : 'DECRYPTING MISSION CACHE' }}
       </div>
-      <div v-if="isScanning" class="text-muted text-[0.55rem] font-mono tracking-[0.3em] uppercase opacity-50">
+      <div v-if="isScanning" class="text-muted text-[0.75rem] font-mono tracking-[0.4em] uppercase opacity-50">
         SCANNING SECTOR MINUS {{ autoScanDays }} DAYS
       </div>
     </div>
@@ -135,80 +135,80 @@
       <div
         v-for="(trip, index) in filteredTrips"
         :key="index"
-        class="trip-card border-b border-panel-border px-5 py-4 cursor-pointer active:bg-panel-hover transition-all relative overflow-hidden group"
+        class="trip-card border-b border-panel-border px-8 py-8 cursor-pointer active:bg-panel-hover transition-all relative overflow-hidden group"
         @click="selectTrip(trip)"
       >
         <!-- Background Hover Effect -->
-        <div class="absolute inset-0 bg-gradient-to-r from-volt/0 to-volt/5 translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-volt/0 to-volt/5 translate-x-full group-hover:translate-x-0 transition-transform duration-700"></div>
 
         <!-- Header Info -->
-        <div class="flex items-center justify-between mb-3 relative z-10">
-           <div class="flex items-center gap-2">
-              <span class="text-[0.7rem] font-mono text-primary font-black tracking-widest">
+        <div class="flex items-center justify-between mb-5 relative z-10">
+           <div class="flex items-center gap-3">
+              <span class="text-[1.1rem] font-mono text-primary font-black tracking-widest">
                 <span class="text-volt">{{ formatTime(trip.startTime || trip.StartTime) }}</span> 
-                <span class="mx-1 opacity-30">→</span> 
+                <span class="mx-2 opacity-30">→</span> 
                 <span>{{ formatTime(trip.endTime || trip.FinishTime) }}</span>
               </span>
-              <div class="px-1.5 py-0.5 bg-volt/10 border border-volt/30 rounded-sm text-[0.45rem] font-bold text-volt uppercase tracking-widest">
+              <div class="px-3 py-1 bg-volt/10 border border-volt/30 rounded-sm text-[0.65rem] font-black text-volt uppercase tracking-widest">
                 {{ isFleet && !filterVehicle ? (trip.VehicleName || trip.VehicleCode || trip.vehicleCode) : 'LINKED' }}
               </div>
            </div>
-           <span class="text-muted text-[0.55rem] font-mono tracking-widest uppercase opacity-70">
+           <span class="text-muted text-[0.8rem] font-mono tracking-widest uppercase opacity-70 font-bold">
              {{ trip.TripLength?.trim() || formatDuration(trip.startTime || trip.StartTime, trip.endTime || trip.FinishTime) }}
            </span>
         </div>
 
         <!-- Route Path -->
-        <div class="space-y-1 mb-4 relative z-10">
-           <div class="flex items-start gap-2">
-              <div class="mt-1 w-1.5 h-1.5 rounded-full bg-muted opacity-30 flex-shrink-0"></div>
-              <div class="text-[0.65rem] text-primary/80 font-mono truncate tracking-tight">
+        <div class="space-y-3 mb-8 relative z-10">
+           <div class="flex items-start gap-4">
+              <div class="mt-2 w-2.5 h-2.5 rounded-full bg-muted opacity-30 flex-shrink-0"></div>
+              <div class="text-[1rem] text-primary/80 font-mono truncate tracking-tight">
                 {{ trip.startAddress || trip.StartAddress || 'GPS MISSION START' }}
               </div>
            </div>
-           <div class="flex items-start gap-2">
-              <div class="mt-1 w-1.5 h-1.5 rounded-full bg-volt flex-shrink-0 shadow-[0_0_5px_var(--color-volt)]"></div>
-              <div class="text-[0.65rem] text-primary font-mono truncate font-bold tracking-tight">
+           <div class="flex items-start gap-4">
+              <div class="mt-2 w-2.5 h-2.5 rounded-full bg-volt flex-shrink-0 shadow-[0_0_8px_var(--color-volt)]"></div>
+              <div class="text-[1rem] text-primary font-mono truncate font-black tracking-tight">
                 {{ trip.endAddress || trip.destinationName || trip.FinishAddress || 'GPS MISSION END' }}
               </div>
            </div>
         </div>
 
         <!-- Telemetry Row -->
-        <div class="flex items-center gap-6 text-[0.55rem] font-mono relative z-10 border-t border-panel-border/30 pt-3">
-          <div class="flex items-center group/item">
-            <span class="text-muted mr-1.5 tracking-widest uppercase opacity-50">Dist</span>
-            <span class="text-primary font-bold group-hover/item:text-volt transition-colors">{{ (trip.distanceKm || trip.TotalDistance || 0).toFixed(1) }} <span class="opacity-40 font-normal">KM</span></span>
+        <div class="flex items-center gap-10 text-[0.85rem] font-mono relative z-10 border-t border-panel-border/30 pt-6">
+          <div class="flex items-center group/item scale-110 origin-left">
+            <span class="text-muted mr-2 tracking-widest uppercase opacity-50 font-bold text-[0.65rem]">Dist</span>
+            <span class="text-primary font-black group-hover/item:text-volt transition-colors">{{ (trip.distanceKm || trip.TotalDistance || 0).toFixed(1) }} <span class="opacity-40 font-normal text-[0.55rem]">KM</span></span>
           </div>
-          <div class="flex items-center group/item">
-            <span class="text-muted mr-1.5 tracking-widest uppercase opacity-50">Avg</span>
-            <span class="text-primary font-bold">{{ trip.AverageSpeed || Math.round(((trip.distanceKm || trip.TotalDistance || 0) / (Math.max(1, (new Date(trip.endTime || trip.FinishTime || 0).getTime() - new Date(trip.startTime || trip.StartTime || 0).getTime())) / 3600000))) || '--' }} <span class="opacity-40 font-normal">KM/H</span></span>
+          <div class="flex items-center group/item scale-110 origin-left">
+            <span class="text-muted mr-2 tracking-widest uppercase opacity-50 font-bold text-[0.65rem]">Avg</span>
+            <span class="text-primary font-black">{{ trip.AverageSpeed || Math.round(((trip.distanceKm || trip.TotalDistance || 0) / (Math.max(1, (new Date(trip.endTime || trip.FinishTime || 0).getTime() - new Date(trip.startTime || trip.StartTime || 0).getTime())) / 3600000))) || '--' }} <span class="opacity-40 font-normal text-[0.55rem]">KM/H</span></span>
           </div>
           <div class="flex items-center group/item ml-auto">
-            <span class="text-[0.45rem] font-bold text-muted uppercase tracking-[0.2em] opacity-40 mr-2 italic">Telemetry Status:</span>
-            <span class="text-[0.45rem] font-bold text-volt uppercase tracking-widest">Encrypted</span>
+            <span class="text-[0.65rem] font-black text-muted uppercase tracking-[0.3em] opacity-40 mr-3 italic">Telemetry Integrity:</span>
+            <span class="text-[0.7rem] font-black text-volt uppercase tracking-[0.2em] shadow-volt px-2 py-0.5 bg-volt/5 rounded">SECURE</span>
           </div>
         </div>
 
         <!-- AI Evaluation Action -->
-        <div v-if="!isFleet" class="mt-4 relative z-10" @click.stop>
+        <div v-if="!isFleet" class="mt-8 relative z-10" @click.stop>
           <button 
             v-if="expandedTripIndex !== index" 
             @click.stop="fetchAdminSummary(index)" 
-            class="w-full flex items-center justify-between px-3 py-2 bg-void border border-panel-border/40 hover:border-volt/40 transition-all group/btn"
+            class="w-full flex items-center justify-between px-6 py-4 bg-void border border-panel-border/40 hover:border-volt/40 transition-all group/btn shadow-lg"
           >
-            <span class="text-[0.5rem] font-mono text-muted group-hover/btn:text-primary transition-colors uppercase tracking-[0.25em]">Request Tactical Debrief</span>
-            <Sparkles :size="10" class="text-volt opacity-50 group-hover/btn:opacity-100 group-hover/btn:scale-110 transition-all" />
+            <span class="text-[0.8rem] font-mono text-muted group-hover/btn:text-primary transition-colors uppercase tracking-[0.4em] font-black">Request Tactical Debrief</span>
+            <Sparkles :size="16" class="text-volt opacity-50 group-hover/btn:opacity-100 group-hover/btn:scale-125 transition-all" />
           </button>
           
-          <div v-if="expandedTripIndex === index" class="mt-2 relative">
-             <div class="absolute inset-0 bg-volt opacity-[0.02] pointer-events-none"></div>
-             <div class="border-l-2 border-volt p-4 bg-void/80 backdrop-blur-sm border border-panel-border/30 rounded-r-lg">
-                <div class="text-[0.5rem] font-mono text-volt uppercase tracking-[0.3em] mb-3 flex items-center justify-between">
+          <div v-if="expandedTripIndex === index" class="mt-4 relative animate-in slide-in-from-top-4 duration-500">
+             <div class="absolute inset-0 bg-volt opacity-[0.03] pointer-events-none"></div>
+             <div class="border-l-4 border-volt p-8 bg-void/90 backdrop-blur-xl border border-panel-border/30 rounded-r-xl shadow-2xl">
+                <div class="text-[0.75rem] font-mono text-volt uppercase tracking-[0.4em] mb-6 flex items-center justify-between font-black">
                   <span>MISSION EVALUATION FEED</span>
                   <span v-if="adminFeedbackLoading" class="animate-pulse">DECRYPTING...</span>
                 </div>
-                <div class="text-[0.65rem] font-mono leading-relaxed text-blue-100/80 whitespace-pre-wrap">
+                <div class="text-[1rem] font-mono leading-relaxed text-blue-100/90 whitespace-pre-wrap font-medium">
                   {{ adminFeedback || 'ESTABLISHING SECURE CONNECTION...' }}
                 </div>
              </div>
