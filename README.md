@@ -28,7 +28,14 @@ docker-compose up --build
 ```
 Frontend: **[localhost:8080](http://localhost:8080)** | API: **[localhost:3000](http://localhost:3000)**
 
-### Option B: Local Manual Setup
+### Option B: Render Blueprint Deployment 🚀
+Deploy the entire infrastructure to Render in one click.
+1.  Push this repository to GitHub.
+2.  On **[Render Dashboard](https://dashboard.render.com)**, click **New +** -> **Blueprint**.
+3.  Connect your repository and click **Apply**.
+4.  Fill in the environment variables (DATABASE_URL, etc.) in the Render UI.
+
+### Option C: Local Manual Setup
 1. **Configure Environment**
    ```bash
    # Backend (.server/.env)
