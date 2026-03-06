@@ -38,18 +38,13 @@ RUN apt-get update && apt-get install -y nginx openssl && rm -rf /var/lib/apt/li
 
 WORKDIR /app
 
-# Copy full built server sources + dist
+# Copy full built server (sources + node_modules + dist + generated Prisma client)
 COPY --from=builder /app/server ./server
-
-# Install only production dependencies for the server
-WORKDIR /app/server
-RUN npm install --omit=dev
 
 # Copy client build into Nginx web root
 COPY --from=builder /app/client/dist /usr/share/nginx/html
 
 # Nginx config (adjust upstream to localhost:3000)
-WORKDIR /app
 COPY client/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
