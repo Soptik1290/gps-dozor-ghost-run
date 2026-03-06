@@ -21,34 +21,35 @@
 
 ## 🚀 Quick Start
 
-### 1. Configure Environment
+### Option A: Tactical Docker Deployment (Recommended)
+The fastest way to deploy the full mission stack.
 ```bash
-# Backend (.server/.env)
-DATABASE_URL="postgresql://..."
-GPS_DOZOR_USERNAME="..."
-GPS_DOZOR_PASSWORD="..."
-OPENAI_API_KEY="sk-..."
-
-# Frontend (.client/.env)
-VITE_API_URL="http://localhost:3000"
-VITE_MAPBOX_TOKEN="pk.ey..."
+docker-compose up --build
 ```
+Frontend: **[localhost:8080](http://localhost:8080)** | API: **[localhost:3000](http://localhost:3000)**
 
-### 2. Launch Backend (NestJS)
-```bash
-cd server
-npm install
-npx prisma generate
-npm run start:dev
-```
+### Option B: Local Manual Setup
+1. **Configure Environment**
+   ```bash
+   # Backend (.server/.env)
+   DATABASE_URL="postgresql://..."
+   GPS_DOZOR_USERNAME="..."
+   GPS_DOZOR_PASSWORD="..."
+   OPENAI_API_KEY="sk-..."
 
-### 3. Launch Frontend (Vue 3)
-```bash
-cd client
-npm install
-npm run dev
-```
-Open **[localhost:5173](http://localhost:5173)** 🚀
+   # Frontend (.client/.env)
+   VITE_API_URL="http://localhost:3000"
+   VITE_MAPBOX_TOKEN="pk.ey..."
+   ```
+2. **Launch Backend (NestJS)**
+   ```bash
+   cd server && npm install && npx prisma generate && npm run start:dev
+   ```
+3. **Launch Frontend (Vue 3)**
+   ```bash
+   cd client && npm install && npm run dev
+   ```
+   Open **[localhost:5173](http://localhost:5173)** 🚀
 
 ---
 
