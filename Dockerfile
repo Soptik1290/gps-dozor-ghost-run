@@ -31,6 +31,10 @@ RUN npm install --include=dev
 COPY client ./
 RUN npm run build
 
+# ── Prune devDependencies ──
+WORKDIR /app
+RUN npm prune --omit=dev
+
 # ── Stage 2: Runtime with Nginx + Node ──
 FROM node:20-slim AS runner
 
@@ -38,7 +42,10 @@ RUN apt-get update && apt-get install -y nginx openssl && rm -rf /var/lib/apt/li
 
 WORKDIR /app
 
-# Copy full built server (sources + node_modules + dist + generated Prisma client)
+# Copy root node_modules (where NPM hoists most workspace dependencies like @nestjs/core)
+COPY --from=builder /app/node_modules ./node_modules
+
+# Copy full built server (sources + dist + generated Prisma client)
 COPY --from=builder /app/server ./server
 
 # Copy client build into Nginx web root
@@ -50,5 +57,6 @@ COPY client/nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 
 # Simple process manager: start Nest backend and Nginx
+# Note: node handles hoisted modules in /app/node_modules automatically
 CMD service nginx start && node server/dist/src/main.js
 
