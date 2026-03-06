@@ -42,7 +42,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     async function login(user: string, password: string) {
         // Call NestJS JWT login
-        const res = await fetch('http://localhost:3000/auth/login', {
+        const res = await fetch('/api-nest/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: user, password }),
