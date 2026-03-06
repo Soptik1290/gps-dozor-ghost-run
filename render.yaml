@@ -4,7 +4,7 @@ services:
     name: gps-dozor-server
     runtime: docker
     dockerContext: server
-    dockerfilePath: Dockerfile
+    dockerfilePath: server/Dockerfile
     plan: free # or starter
     region: frankfurt
     envVars:
@@ -26,7 +26,7 @@ services:
     name: gps-dozor-client
     runtime: docker
     dockerContext: client
-    dockerfilePath: Dockerfile
+    dockerfilePath: client/Dockerfile
     plan: free
     region: frankfurt
     envVars:
