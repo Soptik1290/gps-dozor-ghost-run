@@ -284,7 +284,7 @@ export class TripsService {
         this.logger.log(`Creating evaluation from GPS Dozor trip data for ${tripData.VehicleCode || 'unknown'}`);
 
         const startTime = tripData.StartTime || tripData.startTime;
-        const finishTime = tripData.FinishTime || tripData.finishTime;
+        const finishTime = tripData.FinishTime || tripData.finishTime || tripData.EndTime || tripData.endTime;
 
         if (!startTime || !finishTime) {
             this.logger.warn('Missing start/finish time in trip data', tripData);
@@ -371,7 +371,7 @@ export class TripsService {
         this.logger.log('Analyzing external GPS Dozor trip for Admin');
 
         const startTime = tripData.StartTime || tripData.startTime;
-        const finishTime = tripData.FinishTime || tripData.finishTime;
+        const finishTime = tripData.FinishTime || tripData.finishTime || tripData.EndTime || tripData.endTime;
 
         if (!startTime || !finishTime) {
             return { feedback: 'Invalid trip data for analysis.', weather: 'N/A' };

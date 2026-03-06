@@ -1,47 +1,88 @@
 # 🏎️ GPS Dozor: Ghost Run
 
-*Změň nudnou rozvážku na F1 kvalifikaci (bezpečně).*
+**AI-powered tactical racing engine for delivery fleets.** Transform mundane delivery routes into high-stakes precision runs using real-time telemetry, AI-driven feedback, and historical ghost matching. Works as a complete mission control system for both field pilots (drivers) and fleet command (admins).
 
-## 1. Pro koho to je a proč? (Justifikace projektu)
-**Cílová skupina:** Kurýři, řidiči rozvozových služeb (food delivery) a logistické firmy s opakujícími se trasami.
-
-**Proč Ghost Run?**
-Běžné sledování GPS dat je pro řidiče jen "velký bratr", který je často nudí a stresuje. *Ghost Run* přináší gamifikaci. Aplikace umožňuje řidiči "závodit" proti svému vlastnímu historicky nejlepšímu času na dané trase, nebo proti času zkušenějšího kolegy (tzv. "Ghost"). 
-
-**Business hodnota a bezpečnostní pojistka:**
-Aplikace nejen vizualizuje "ideální stopu", ale především **učí řidiče efektivitě**. Abychom předešli nebezpečné jízdě, systém odměňuje plynulost. Pokud řidič jede agresivně (z dodaného API čerpáme `eco-driving-events` jako prudké brzdění, cornering, zrychlení), dostává virtuální časové penalizace. Motivujeme tak k plynulosti, bezpečnosti a nižší spotřebě (snížení flotilových nákladů).
+> [!NOTE]
+> This project was **VibeCoded in Antigravity** using autonomous agentic workflows.
 
 ---
 
-## 2. Jaké AI nástroje jsem použil a jaký byl workflow
-Celý projekt byl stavěn agilním "Vibe Coding" přístupem. Do role AI inženýra a UI/UX experta jsem zapojil pokročilého autonomního agenta, se kterým jsem aplikaci tvořil pomocí Pair Programingu.
+## ✨ Features
 
-**Workflow ("Vibe Coding"):**
-1. **Ideation & Architektura:** Pomocí AI byl navržen kompletní technologický stack (Vue 3, Tailwind v4, Mapbox GL, Pinia) a excentrický design systém ("Marathon Brutalism" - temné sci-fi, glassmorphism, CRT šum).
-2. **Step-by-Step iterace:** Práce probíhala ve fázích. AI nejprve vygenerovalo detailní *Implementation Plan*, a teprve po mém schválení psalo a rovnou samo spouštělo kód v terminálu.
-3. **Data Wiring:** Aplikace využívá 4 reálné API endpointy (`groups`, `trips`, `history`, `eco-driving`) konzumované přes asynchronní composables, + 1 externí API (`OpenMeteo`) pro vliv počasí.
-4. **LLM Integrace:**  Přímo do appky je implementováno volání **OpenAI (gpt-4o-mini)**. Telemetrie v reálném čase krmí prompt, ze kterého LLM generuje vtipné a lakonické rady ("Race Engineer Debrief"), jenž jsou následně skrze Web Speech API předčítány robotickým hlasem.
-
----
-
-## 3. Na co jsem narazil a jak jsem to vyřešil (Výzvy)
-**Problém 1: Výpočet časového rozdílu (Ghost Delta) z asynchronních GPS bodů.**
-GPS souřadnice Ducha a aktuální jízdy nejsou nikdy perfektně synchronizované v prostoru ani čase. 
-*Řešení:* Vytvořil jsem matematický algoritmus využívající Haversine formuli k namapování obou tras podle ujeté vzdálenosti, který nachází přesný frakční index. Pro odstranění otravných "skoků" v datech je na výpočet zpoždění aplikován vyhlazovací plovoucí průměr (5-sample rolling average).
-
-**Problém 2: Srozumitelnost pro testera & Desktop zobrazení.**
-Původní "High-Fidelity" sci-fi návrh působil na širokém monitoru příliš roztahaně a texty (např. `SYS::AUTHENTICATE`) byly příliš kryptické pro B2B nástroj.
-*Řešení:* Vyvinuli jsme Desktop Wrapper, který aplikaci centruje do "Phone simulátoru". Do něj jsme přidali prázdné stavy (Empty States s jasnými CTA tlačítky) a Readme Sidebar s předvyplněnými testovacími přístupy, aby byla aplikace "*použitelná okamžitě bez návodu*".
-
-**Problém 3: Zvládání CORS limitů a závislost na placeném OpenAI API.**
-*Řešení:* Integrace API klíčů byla abstrahována do `.env` souborů. Pokud si hodnotitel nevyplní vlastní OpenAI klíč, aplikace využije robustní "Fallback mode" — systém se inteligentně přepne na vestavěnou rozhodovací logiku, generující in-game taktické povely, takže celá appka spolehlivě funguje i tak.
+*   **👻 AI-Powered Ghost Racing** – Match your current route against personal bests or top-tier teammates. Visualize the "Ghost" on a tactical Mapbox HUD in real-time.
+*   **🎮 Tactical HUD** – Premium glassmorphic interface with real-time telemetry, efficiency gauges, and dynamic scanline overlays for a high-intensity "mission" feel.
+*   **🎙️ Race Engineer Debrief** – Context-aware AI feedback powered by GPT-4o-mini. Get spoken tactical advice based on your speed, weather, and driving efficiency.
+*   **📂 Mission Archive** – Comprehensive telemetry breakdown for every sortie. Analyze sector success rates, temporal deltas, and chassis integrity (eco-driving events).
+*   **🛡️ Fleet Command** – Global oversight for admins. Track active assets, monitor fleet-wide efficiency matrices, and manage high-stakes challenges.
+*   **🌤️ Dynamic Track Status** – Integrated weather data affecting "track conditions" (WET, ICY, STORM) with corresponding UI ambient theming.
+*   **⚖️ Eco-Efficiency Scoring** – Gamified scoring system that rewards smoothness. Earn ranks (S, A, B, C, F) based on pacer matching and safety events.
 
 ---
 
-## 4. Co bych udělal jinak nebo přidal, kdybych měl víc času
-*   **Modul "CREW" (Multi-agent sledování v reálném čase):** V Dashboardu i na mapě je teď přepínač na "My Crew". Dalším krokem by pro opravdovou business hodnotu bylo začlenění WebSockets pole pro zobrazení pozice ostatních kolegů souběžně (multiplayer vrstva).
-*   **Leaderboards & Odznaky:** Perzistentní herní smyčka pro flotilu. Chtěl bych přidat systém odznaků ("Plynulost týdne" za jízdu bez eco penalty) propojený na tabulku nejlepších. Snížilo by to Opex náklady flotil na opravy.
-*   **Pokročilé terénní vrstvy:** Mapbox Terrain-DEM v2, aby 3D lajna trasy reálně kopírovala stoupání i klesání v horském terénu a Race Engineer radil například "Pozor na brzdy, klesání." 
+## 🚀 Quick Start
+
+### 1. Configure Environment
+```bash
+# Backend (.server/.env)
+DATABASE_URL="postgresql://..."
+GPS_DOZOR_USERNAME="..."
+GPS_DOZOR_PASSWORD="..."
+OPENAI_API_KEY="sk-..."
+
+# Frontend (.client/.env)
+VITE_API_URL="http://localhost:3000"
+VITE_MAPBOX_TOKEN="pk.ey..."
+```
+
+### 2. Launch Backend (NestJS)
+```bash
+cd server
+npm install
+npx prisma generate
+npm run start:dev
+```
+
+### 3. Launch Frontend (Vue 3)
+```bash
+cd client
+npm install
+npm run dev
+```
+Open **[localhost:5173](http://localhost:5173)** 🚀
 
 ---
-*Powered by Vue 3, Mapbox a GenAI.*
+
+## 🏗️ Tech Stack
+
+| Component | Technology |
+| :--- | :--- |
+| **Frontend** | Vue 3 (Composition API), Vite, Tailwind v4 |
+| **Visuals** | Mapbox GL JS, Lucide icons, Glassmorphism |
+| **Backend** | NestJS (TypeScript) |
+| **Database** | Prisma ORM, Neon Postgres (Serverless) |
+| **AI** | OpenAI GPT-4o-mini, Web Speech API |
+| **Data Sources** | GPS Dozor API, Open-Meteo |
+
+---
+
+## 📁 Project Structure
+
+```text
+gps-dozor-ghost-run/
+├── server/               # NestJS Backend
+│   ├── src/
+│   │   ├── trips/        # Mission & Telemetry logic
+│   │   ├── ai/           # Race Engineer AI service
+│   │   └── gps-dozor/    # External API integration
+│   └── prisma/           # Database Schema
+├── client/               # Vue 3 Frontend
+│   └── src/
+│       ├── views/        # Tactical cockpit, Commander, HUD
+│       ├── components/   # Gauges, HUD overlays, Cards
+│       └── api/          # Secure uplink endpoints
+└── README.md             # Tactical Briefing
+```
+
+---
+
+*Powered by Antigravity — Built for precision. Built for the run.*

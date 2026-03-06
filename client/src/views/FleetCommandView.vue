@@ -1,15 +1,15 @@
 <template>
-  <div class="dashboard-view min-h-dvh pb-20 bg-void">
+  <div class="fleet-command-view min-h-dvh pb-20 bg-void">
     <!-- ── Top Header ── -->
-    <header class="glass-panel border-b border-panel-border px-4 py-3 flex items-center justify-between">
+    <header class="glass-panel border-b border-panel-border px-6 py-5 flex items-center justify-between">
       <div>
-        <div class="text-muted text-[0.5625rem] uppercase tracking-[0.2em] font-mono">
+        <div class="text-muted text-[0.7rem] uppercase tracking-[0.2em] font-mono font-bold">
           FLEET COMMAND
         </div>
-        <h1 class="heading text-lg text-primary">
+        <h1 class="heading text-2xl text-primary mt-1">
           {{ activeGroup?.Name || 'SCANNING...' }}
         </h1>
-        <div class="text-muted text-xs font-mono mt-1">
+        <div class="text-muted text-sm font-mono mt-1 opacity-70">
           Select a vehicle to view telemetry
         </div>
       </div>
@@ -18,17 +18,17 @@
           class="inline-block w-2 h-2 bg-volt animate-glow-pulse"
           title="Live connection"
         />
-        <span class="text-muted text-[0.625rem] font-mono">LIVE</span>
+        <span class="text-muted text-[0.7rem] font-mono tracking-widest uppercase">LIVE</span>
       </div>
     </header>
 
     <!-- ── Quick Nav / Smart Match ── -->
-    <div class="px-4 py-3 border-b border-panel-border bg-panel-hover">
-      <div class="text-volt text-[0.625rem] font-mono tracking-widest mb-2">QUICK NAV</div>
-      <div class="flex gap-2 relative">
+    <div class="px-6 py-5 border-b border-panel-border bg-panel-hover">
+      <div class="text-volt text-[0.7rem] font-mono tracking-[0.2em] mb-3 uppercase font-bold">QUICK NAV</div>
+      <div class="flex gap-4 relative">
         <select 
           v-model="destination" 
-          class="flex-1 bg-void border border-panel-border text-primary text-sm p-3 font-mono outline-none focus:border-volt transition-colors appearance-none"
+          class="flex-1 bg-void border border-panel-border text-primary text-base p-4 font-mono outline-none focus:border-volt transition-colors appearance-none"
         >
           <option value="" disabled selected>Select destination...</option>
           <option value="warehouse">Prague Warehouse (Ghost Route)</option>
@@ -38,7 +38,7 @@
         <button 
           @click="startNavigation"
           :disabled="!destination || isMatching"
-          class="btn btn--solid flex-shrink-0"
+          class="btn btn--solid flex-shrink-0 px-8 py-4 text-sm font-bold tracking-widest"
         >
           <span v-if="isMatching" class="animate-pulse">...</span>
           <span v-else>NAV ROUND</span>
@@ -50,7 +50,7 @@
     <div class="flex border-b border-panel-border">
       <button
         @click="ui.activeTab = 'crew'"
-        class="flex-1 py-3 text-center text-[0.6875rem] uppercase tracking-wider font-mono
+        class="flex-1 py-5 text-center text-[0.85rem] uppercase font-bold tracking-wider font-mono
                transition-colors border-b-2"
         :class="ui.activeTab === 'crew'
           ? 'text-volt border-volt'
@@ -60,7 +60,7 @@
       </button>
       <button
         @click="ui.activeTab = 'fleet'"
-        class="flex-1 py-3 text-center text-[0.6875rem] uppercase tracking-wider font-mono
+        class="flex-1 py-5 text-center text-[0.85rem] uppercase font-bold tracking-wider font-mono
                transition-colors border-b-2"
         :class="ui.activeTab === 'fleet'
           ? 'text-volt border-volt'
@@ -93,11 +93,11 @@
                px-4 py-3 cursor-pointer active:bg-panel-hover transition-all duration-150"
         @click="openVehicle(vehicle)"
       >
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-5">
           <!-- Status dot -->
           <div class="flex-shrink-0">
             <div
-              class="w-2.5 h-2.5"
+              class="w-3.5 h-3.5"
               :class="vehicle.Speed > 0
                 ? 'bg-volt animate-glow-pulse'
                 : 'bg-dim'"
@@ -107,15 +107,15 @@
           <!-- Info -->
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2">
-              <span class="heading text-sm text-primary truncate">{{ vehicle.Name }}</span>
+              <span class="heading text-lg text-primary font-bold truncate">{{ vehicle.Name }}</span>
               <span
                 v-if="vehicleStore.crewVehicleCodes.has(vehicle.Code)"
-                class="text-[0.5rem] text-volt font-mono tracking-wider bg-volt-dim px-1.5 py-0.5"
+                class="text-[0.65rem] text-volt font-black tracking-wider bg-volt-dim px-1.5 py-0.5"
               >
                 CREW
               </span>
             </div>
-            <div class="text-muted text-[0.625rem] font-mono mt-0.5">
+            <div class="text-muted text-[0.7rem] font-mono tracking-widest uppercase mt-0.5">
               {{ vehicle.SPZ || 'NO PLATE' }}
             </div>
           </div>
@@ -124,7 +124,7 @@
           <div class="data-label text-right flex-shrink-0">
             <span class="data-label__key">SPD</span>
             <span
-              class="data-label__value text-sm"
+              class="data-label__value text-lg font-black"
               :class="vehicle.Speed > 0 ? 'text-volt' : 'text-dim'"
             >
               {{ vehicle.Speed }} <span class="text-[0.5rem] text-muted">km/h</span>
@@ -190,7 +190,7 @@
         
         <div class="flex items-center justify-between gap-4 mt-6">
           <div class="flex-1 border border-panel-border p-3 text-center">
-            <div class="text-muted text-[0.625rem] font-mono mb-1">TARGET TIME</div>
+            <div class="text-muted text-[0.7rem] font-mono tracking-widest uppercase mb-1">TARGET TIME</div>
             <div class="text-primary text-lg">{{ Math.floor(matchedGhost.score) }}m</div>
           </div>
           <div class="flex-1 border border-panel-border p-3 text-center bg-volt-dim border-volt">
@@ -360,3 +360,8 @@ function acceptChallenge() {
   })
 }
 </script>
+
+
+
+
+

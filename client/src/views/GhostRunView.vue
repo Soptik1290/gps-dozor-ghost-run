@@ -14,8 +14,8 @@
 
     <!-- ── Live Efficiency Hub (Left) ── -->
     <div class="absolute left-6 top-1/2 -translate-y-1/2 z-30 pointer-events-none flex flex-col items-center gap-3">
-      <div class="text-[0.5rem] font-mono text-volt uppercase tracking-[0.4em] [writing-mode:vertical-lr] rotate-180 py-2 font-bold opacity-80">CHASSIS EFFICIENCY</div>
-      <div class="w-1.5 h-64 bg-void/40 border border-panel-border/30 relative overflow-hidden flex flex-col-reverse backdrop-blur-sm shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+      <div class="text-[0.7rem] font-mono text-volt font-black uppercase tracking-[0.4em] [writing-mode:vertical-lr] rotate-180 py-2 font-bold opacity-80">CHASSIS EFFICIENCY</div>
+      <div class="w-2 h-72 bg-void/40 border border-panel-border/30 relative overflow-hidden flex flex-col-reverse backdrop-blur-sm shadow-[0_0_20px_rgba(0,0,0,0.5)]">
         <div class="absolute inset-0 opacity-20" style="background: repeating-linear-gradient(0deg, transparent, transparent 7px, var(--color-panel-border) 7px, var(--color-panel-border) 8px);"></div>
         <div 
           class="w-full transition-all duration-700 ease-out" 
@@ -26,8 +26,8 @@
         <div class="absolute top-[20%] left-0 right-0 h-[1px] bg-yellow-500/30"></div>
       </div>
       <div class="flex flex-col items-center bg-void/60 px-2 py-1 border border-panel-border/20 backdrop-blur-sm">
-        <div class="heading text-sm transition-colors duration-500" :style="{ color: tierColorHex }">{{ score }}%</div>
-        <div class="text-[0.45rem] font-mono text-muted tracking-widest uppercase">Stability</div>
+        <div class="heading text-base transition-colors font-bold duration-500" :style="{ color: tierColorHex }">{{ score }}%</div>
+        <div class="text-[0.6rem] font-mono text-muted font-bold tracking-widest uppercase">Stability</div>
       </div>
     </div>
 
@@ -35,7 +35,7 @@
     <Transition name="fade-fast">
       <div v-if="Math.abs(timeDelta) < 3 && isPlaying" 
            class="absolute top-32 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
-         <div class="px-6 py-2 bg-volt text-void heading text-[0.625rem] tracking-[0.4em] shadow-[0_0_30px_rgba(var(--color-volt-rgb),0.5)] flex items-center gap-4 border border-white/20">
+         <div class="px-6 py-2 bg-volt text-void heading text-[0.85rem] tracking-[0.4em] shadow-[0_0_30px_rgba(var(--color-volt-rgb),0.5)] flex items-center gap-4 border border-white/20">
            <div class="w-1.5 h-1.5 bg-void animate-ping rounded-full"></div>
            {{ timeDelta < 0 ? 'TARGET LEAD MAINTAINED' : 'GHOST PROXIMITY CRITICAL' }}
            <div class="w-1.5 h-1.5 bg-void animate-ping rounded-full"></div>
@@ -52,8 +52,8 @@
           <ArrowLeft :size="20" />
         </button>
         <div class="flex-1 text-center">
-          <div class="heading text-sm text-primary tracking-[0.15em]">GHOST RUN REPLAY</div>
-          <div class="text-muted text-[0.5rem] font-mono uppercase tracking-[0.2em] opacity-60">
+          <div class="heading text-base text-primary font-bold tracking-[0.15em]">GHOST RUN REPLAY</div>
+          <div class="text-muted text-[0.65rem] font-mono uppercase tracking-[0.2em] opacity-60">
             TELEMETRY: {{ vehicleCode }}
           </div>
         </div>
@@ -110,7 +110,7 @@
       
       <!-- Stats Comparison Grid -->
       <div class="bg-black/60 border border-panel-border/50 p-5 mb-6 relative mt-6">
-        <div class="absolute -top-3 left-6 bg-panel-border text-muted text-[0.5rem] font-bold px-3 py-1 font-mono tracking-[0.25em] uppercase shadow-lg">
+        <div class="absolute -top-3 left-6 bg-panel-border text-muted text-[0.65rem] font-bold px-3 py-1 font-mono tracking-[0.25em] uppercase shadow-lg">
           QUANTUM COMPARISON
         </div>
         
@@ -141,7 +141,7 @@
 
       <!-- AI Summary -->
       <div class="bg-black/60 border-l-2 p-3 mb-8 border-volt shadow-inner">
-        <div class="text-[0.5rem] font-mono text-volt uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+        <div class="text-[0.7rem] font-mono text-volt font-black uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
           <div class="w-1 h-1 bg-volt animate-ping rounded-full"></div>
           INTELLIGENCE NODE:
           <span v-if="aiFeedbackLoading" class="animate-pulse opacity-50 italic">PROCESSING...</span>
@@ -177,25 +177,25 @@
         <!-- Speed & Distance -->
         <div class="grid grid-cols-2 gap-0 px-6 py-4 border-b border-panel-border/20">
           <div class="flex flex-col items-center group">
-            <span class="text-[0.5rem] font-mono text-muted tracking-[0.3em] uppercase mb-1 group-hover:text-volt transition-colors">Vector Velocity</span>
-            <span class="text-4xl text-primary font-bold tabular-nums tracking-tighter shadow-volt/10">
+            <span class="text-[0.7rem] font-mono text-muted tracking-[0.25em] font-bold uppercase mb-1 group-hover:text-volt transition-colors">Vector Velocity</span>
+            <span class="text-5xl text-primary font-black tabular-nums tracking-tighter shadow-volt/10">
               {{ Math.round(currentSpeed) }}
-              <span class="text-[0.625rem] text-muted font-mono tracking-widest ml-1 opacity-50 uppercase">KM/H</span>
+              <span class="text-[0.75rem] text-muted font-mono tracking-widest ml-2 font-bold opacity-50 uppercase">KM/H</span>
             </span>
           </div>
 
           <div class="flex flex-col items-center border-l border-panel-border/20 group">
-            <span class="text-[0.5rem] font-mono text-muted tracking-[0.3em] uppercase mb-1 group-hover:text-primary transition-colors">Sector Coverage</span>
-            <span class="text-4xl text-primary font-bold tabular-nums tracking-tighter">
+            <span class="text-[0.7rem] font-mono text-muted tracking-[0.25em] font-bold uppercase mb-1 group-hover:text-primary transition-colors">Sector Coverage</span>
+            <span class="text-5xl text-primary font-black tabular-nums tracking-tighter">
               {{ (totalRouteLength / 1000).toFixed(1) }}
-              <span class="text-[0.625rem] text-muted font-mono tracking-widest ml-1 opacity-50 uppercase">KM</span>
+              <span class="text-[0.75rem] text-muted font-mono tracking-widest ml-2 font-bold opacity-50 uppercase">KM</span>
             </span>
           </div>
         </div>
 
         <!-- Playback Controls -->
         <div class="flex items-center gap-4 px-6 py-4 justify-center">
-          <button @click="togglePlayback" class="w-24 py-2 border border-volt/30 bg-volt/5 text-volt text-[0.625rem] font-mono tracking-[0.2em] hover:bg-volt/20 hover:border-volt/60 transition-all active:scale-95">
+          <button @click="togglePlayback" class="w-32 py-4 border text-sm font-bold border-volt/30 bg-volt/5 text-volt text-[0.625rem] font-mono tracking-[0.2em] hover:bg-volt/20 hover:border-volt/60 transition-all active:scale-95">
             {{ isPlaying ? 'PAUSE' : 'REPLAY' }}
           </button>
           
@@ -209,7 +209,7 @@
 
           <div class="flex items-center gap-2">
             <button @click="playbackSpeed = playbackSpeed === 1 ? 10 : (playbackSpeed === 10 ? 50 : 1)" 
-                    class="w-12 py-2 border border-panel-border/30 text-muted font-mono text-[0.625rem] hover:text-primary hover:border-panel-border transition-all">
+                    class="w-16 py-4 border text-sm font-bold border-panel-border/30 text-muted font-mono text-[0.625rem] hover:text-primary hover:border-panel-border transition-all">
               {{ playbackSpeed }}x
             </button>
             <button @click="skipToEnd" class="w-10 py-2 border border-panel-border/30 text-muted hover:text-danger hover:border-danger/30 transition-all opacity-40 hover:opacity-100">
@@ -665,3 +665,5 @@ const mapCenter = computed<[number, number]>(() => {
   opacity: 0;
 }
 </style>
+
+

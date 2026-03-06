@@ -6,35 +6,35 @@
         <button @click="router.push(auth.homeRoute)" class="text-muted hover:text-primary transition-colors">
           <ArrowLeft :size="20" />
         </button>
-        <h1 class="heading text-lg text-primary">LEADERBOARD</h1>
+        <h1 class="heading text-2xl text-primary font-bold tracking-tight">LEADERBOARD</h1>
         <div class="w-8"></div>
       </div>
       
       <!-- Filters -->
       <div class="flex flex-wrap gap-3 mt-4">
-        <select v-model="aggregateBy" class="filter-select">
+        <select v-model="aggregateBy" class="filter-select text-base py-4 px-6">
           <option value="vehicle" class="bg-void text-primary">Sort by Vehicle</option>
           <option value="driver" class="bg-void text-primary">Sort by Driver</option>
         </select>
         
-        <select v-model="selectedGroup" class="filter-select">
+        <select v-model="selectedGroup" class="filter-select text-base py-4 px-6">
           <option value="" class="bg-void text-primary">All Groups</option>
           <option v-for="g in groups" :key="g.Code" :value="g.Code" class="bg-void text-primary">{{ g.Name || g.Code }}</option>
         </select>
         
-        <select v-model="selectedBranch" class="filter-select">
+        <select v-model="selectedBranch" class="filter-select text-base py-4 px-6">
           <option value="" class="bg-void text-primary">All Branches</option>
           <option v-for="b in branches" :key="b" :value="b" class="bg-void text-primary">{{ b }}</option>
         </select>
         
-        <select v-model="dateRange" class="filter-select">
+        <select v-model="dateRange" class="filter-select text-base py-4 px-6">
           <option value="today" class="bg-void text-primary">Today</option>
           <option value="week" class="bg-void text-primary">This Week</option>
           <option value="month" class="bg-void text-primary">This Month</option>
           <option value="all" class="bg-void text-primary">All Time</option>
         </select>
         
-        <select v-model="sortBy" class="filter-select border-volt bg-volt-dim text-volt">
+        <select v-model="sortBy" class="filter-select text-base py-4 px-6 border-volt bg-volt-dim text-volt">
           <option value="score" class="bg-void text-volt">Rank by Score</option>
           <option value="trips" class="bg-void text-volt">Rank by Trips</option>
           <option value="distance" class="bg-void text-volt">Rank by Distance</option>
@@ -46,14 +46,14 @@
     <!-- Weather Indicator -->
     <div v-if="weather" class="px-4 py-2 flex items-center gap-2 border-b border-panel-border">
       <component :is="weatherIcon" :size="14" :class="weatherColor" />
-      <span class="text-xs font-mono" :class="weatherColor">{{ weather.description }}</span>
+      <span class="text-sm font-mono font-bold" :class="weatherColor">{{ weather.description }}</span>
       <span class="text-xs text-muted font-mono ml-auto">{{ Math.round(weather.temperature) }}°C</span>
     </div>
 
     <!-- Loading -->
     <div v-if="loading" class="flex flex-col items-center justify-center py-20">
       <div class="w-8 h-8 border-4 border-volt/20 border-t-volt rounded-full animate-spin mb-4"></div>
-      <div class="text-volt text-xs font-mono animate-pulse">CALCULATING RANKINGS...</div>
+      <div class="text-volt text-sm font-mono font-bold animate-pulse">CALCULATING RANKINGS...</div>
     </div>
 
     <!-- Leaderboard -->
@@ -63,19 +63,19 @@
       <div v-if="filteredItems.length >= 3" class="grid grid-cols-3 gap-4 mb-8 pt-4">
         <!-- 2nd -->
         <div class="flex flex-col items-center justify-end pb-2">
-          <div class="text-4xl mb-2">🥈</div>
+          <div class="text-6xl mb-4">🥈</div>
           <div class="text-sm font-mono text-muted mt-1 text-center truncate w-full px-2">{{ filteredItems[1].name }}</div>
           <div class="score-badge score-badge--silver mt-2 text-lg px-4 py-1">{{ filteredItems[1].score }}</div>
         </div>
         <!-- 1st -->
         <div class="flex flex-col items-center justify-end pb-2">
-          <div class="text-5xl mb-2">🏆</div>
+          <div class="text-7xl mb-6">🏆</div>
           <div class="text-sm font-mono text-volt font-bold mt-1 text-center truncate w-full px-2">{{ filteredItems[0].name }}</div>
           <div class="score-badge score-badge--gold mt-2 text-xl px-6 py-1.5">{{ filteredItems[0].score }}</div>
         </div>
         <!-- 3rd -->
         <div class="flex flex-col items-center justify-end pb-2">
-          <div class="text-3xl mb-2">🥉</div>
+          <div class="text-5xl mb-3">🥉</div>
           <div class="text-sm font-mono text-muted mt-1 text-center truncate w-full px-2">{{ filteredItems[2].name }}</div>
           <div class="score-badge score-badge--bronze mt-2 text-lg px-4 py-1">{{ filteredItems[2].score }}</div>
         </div>
@@ -98,7 +98,7 @@
           <!-- Vehicle/Driver Info -->
           <div class="flex-1 min-w-0">
             <div class="flex items-baseline gap-2">
-              <span class="heading text-xl text-primary truncate">{{ item.name }}</span>
+              <span class="heading text-2xl text-primary font-black truncate">{{ item.name }}</span>
               <span v-if="item.driverName" class="text-xs text-muted">({{ item.driverName }})</span>
             </div>
             <div class="text-xs text-muted font-mono mt-1">
@@ -107,7 +107,7 @@
           </div>
           
           <!-- Score -->
-          <div class="score-badge text-2xl px-5 py-2" :class="getScoreClass(item.score)">
+          <div class="score-badge text-4xl px-8 py-4" :class="getScoreClass(item.score)">
             {{ item.score }}
           </div>
         </div>
@@ -136,7 +136,7 @@
 
     <!-- Empty State -->
     <div v-if="!loading && filteredItems.length === 0" class="py-12 text-center">
-      <div class="text-muted text-xs font-mono">NO DATA AVAILABLE</div>
+      <div class="text-muted text-sm font-mono font-bold">NO DATA AVAILABLE</div>
       <div class="text-dim text-[0.5625rem] font-mono mt-1">TRY ADJUSTING FILTERS</div>
     </div>
   </div>
@@ -402,7 +402,7 @@ onMounted(fetchData)
 
 <style scoped>
 @reference "@/styles/base.css";
-.filter-select {
+.filter-select text-base py-4 px-6 {
   @apply bg-surface text-primary text-sm font-mono px-4 py-3 rounded-none border border-panel-border transition-colors cursor-pointer;
   @apply focus:outline-none focus:border-volt hover:bg-panel-hover;
 }
@@ -456,3 +456,4 @@ onMounted(fetchData)
   @apply bg-danger text-white;
 }
 </style>
+
