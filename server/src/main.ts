@@ -64,9 +64,9 @@ Provides authentication, fleet management, and trip replay data for the Ghost Ru
     customSiteTitle: 'GPS Dozor API Docs',
   });
 
-  const port = process.env.PORT ?? 3000;
-  await app.listen(port);
-  console.log(`\n🚀 GPS Dozor Ghost Run API running on: http://localhost:${port}`);
-  console.log(`📚 Swagger Docs: http://localhost:${port}/api/docs\n`);
+  const port = process.env.PORT ?? 3001;
+  await app.listen(port, '0.0.0.0');
+  console.log(`\n🚀 GPS Dozor Ghost Run API running on: http://0.0.0.0:${port}`);
+  console.log(`📚 Swagger Docs: http://0.0.0.0:${port}/api-nest/docs\n`);
 }
 bootstrap();

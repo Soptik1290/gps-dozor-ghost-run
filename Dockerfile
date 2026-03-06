@@ -60,5 +60,5 @@ EXPOSE 80
 # Render provides $PORT, and we want Nginx to listen on it.
 # We also ensure the Nest backend runs on a different internal port (3000)
 # which Nginx then proxies to.
-CMD /bin/bash -c "envsubst '\$PORT' < /etc/nginx/conf.d/default.conf > /etc/nginx/conf.d/default.conf.tmp && mv /etc/nginx/conf.d/default.conf.tmp /etc/nginx/conf.d/default.conf && service nginx start && PORT=3001 node server/dist/src/main.js"
+CMD /bin/bash -c "envsubst '\$PORT' < /etc/nginx/conf.d/default.conf > /etc/nginx/conf.d/default.conf.tmp && mv /etc/nginx/conf.d/default.conf.tmp /etc/nginx/conf.d/default.conf && service nginx start && cd /app && PORT=3001 node server/dist/src/main.js"
 
