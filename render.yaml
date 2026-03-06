@@ -3,8 +3,8 @@ services:
   - type: web
     name: gps-dozor-server
     runtime: docker
-    dockerContext: .
-    dockerfilePath: server/Dockerfile
+    dockerContext: server
+    dockerfilePath: Dockerfile
     plan: free # or starter
     region: frankfurt
     envVars:
@@ -25,8 +25,8 @@ services:
   - type: web
     name: gps-dozor-client
     runtime: docker
-    dockerContext: .
-    dockerfilePath: client/Dockerfile
+    dockerContext: client
+    dockerfilePath: Dockerfile
     plan: free
     region: frankfurt
     envVars:
