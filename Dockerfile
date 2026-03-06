@@ -56,7 +56,9 @@ COPY client/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 
-# Simple process manager: start Nest backend and Nginx
-# Note: node handles hoisted modules in /app/node_modules automatically
-CMD service nginx start && node server/dist/src/main.js
+# Use a entrypoint script to substitute PORT in Nginx config at runtime
+# Render provides $PORT, and we want Nginx to listen on it.
+# We also ensure the Nest backend runs on a different internal port (3000)
+# which Nginx then proxies to via 127.0.0.1:3000.
+CMD /bin/bash -c "sed -i \"s/\$PORT/${PORT:-80}/g\" /etc/nginx/conf.d/default.conf && service nginx start && PORT=3000 node server/dist/src/main.js"
 
