@@ -121,4 +121,10 @@ export class TripsController {
     analyzeAdmin(@Param('id', ParseIntPipe) id: number) {
         return this.tripsService.analyzeAdmin(id);
     }
+
+    @Post('analyze/admin-external')
+    @ApiOperation({ summary: 'Get AI Context-Aware Financial Feedback for external GPS Dozor trip' })
+    analyzeAdminExternal(@Body() tripData: any) {
+        return this.tripsService.analyzeAdminGpsDozor(tripData);
+    }
 }

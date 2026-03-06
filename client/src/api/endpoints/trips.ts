@@ -32,7 +32,7 @@ export function useTrips(
             nestFetch<any[]>(
                 `/trips?vehicleCode=${encodeURIComponent(vehicleCode.value!)}&from=${encodeURIComponent(from.value)}&to=${encodeURIComponent(to.value)}`
             ),
-        enabled: () => !!vehicleCode.value && vehicleCode.value !== '_',
+        enabled: () => !!vehicleCode.value,
     })
 }
 
@@ -63,6 +63,16 @@ export async function analyzeDriver(tripId: number | string) {
  */
 export async function analyzeAdmin(tripId: number | string) {
     return nestFetch(`/trips/${tripId}/analyze/admin`, { method: 'POST' })
+}
+
+/**
+ * Fetch Context-Aware AI Financial Feedback for external GPS Dozor trip
+ */
+export async function analyzeAdminExternal(tripData: any) {
+    return nestFetch('/trips/analyze/admin-external', {
+        method: 'POST',
+        body: JSON.stringify(tripData),
+    })
 }
 
 /**

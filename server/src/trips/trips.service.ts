@@ -13,14 +13,30 @@ export class TripsService {
         private gpsDozor: GpsDozorService,
         private aiService: AiService,
         private weatherService: WeatherService,
-    ) {}
+    ) { }
 
     async findAll(vehicleId?: number, driverId?: number, vehicleCode?: string, from?: Date, to?: Date) {
         if (vehicleCode) {
             try {
                 const fromStr = from ? from.toISOString() : new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
                 const toStr = to ? to.toISOString() : new Date().toISOString();
-                
+
+                if (vehicleCode === '_') {
+                    // Fleet-wide fetch
+                    this.logger.log('Fetching fleet-wide trips');
+                    const vehicles = await this.gpsDozor.getVehicles();
+                    const tripPromises = vehicles.map(v =>
+                        this.gpsDozor.getVehicleTrips(v.Code, fromStr, toStr)
+                            .then(trips => (Array.isArray(trips) ? trips : []).map(t => ({ ...t, VehicleCode: v.Code, VehicleName: v.Name })))
+                            .catch(() => [])
+                    );
+                    const allTripsArrays = await Promise.all(tripPromises);
+                    const allTrips = allTripsArrays.flat();
+
+                    // Sort by StartTime descending
+                    return allTrips.sort((a, b) => new Date(b.StartTime).getTime() - new Date(a.StartTime).getTime());
+                }
+
                 const gpsDozorTrips = await this.gpsDozor.getVehicleTrips(vehicleCode, fromStr, toStr);
                 if (gpsDozorTrips && gpsDozorTrips.length > 0) {
                     this.logger.log(`Returning ${gpsDozorTrips.length} trips from GPS Dozor API`);
@@ -266,10 +282,10 @@ export class TripsService {
 
     async getEvaluationFromGpsDozorTrip(tripData: any) {
         this.logger.log('Creating evaluation from GPS Dozor trip data');
-        
+
         const startTime = tripData.StartTime || tripData.startTime;
         const finishTime = tripData.FinishTime || tripData.finishTime;
-        
+
         if (!startTime || !finishTime) {
             throw new Error('Invalid trip data - missing start/finish time');
         }
@@ -277,24 +293,24 @@ export class TripsService {
         const start = new Date(startTime);
         const finish = new Date(finishTime);
         const durationMs = finish.getTime() - start.getTime();
-        
+
         const totalDistance = tripData.TotalDistance || tripData.distanceKm || 0;
         const avgSpeed = tripData.AverageSpeed || (totalDistance > 0 ? (totalDistance / (durationMs / 3600000)) : 0);
         const maxSpeed = tripData.MaxSpeed || (avgSpeed * 1.2);
         const fuel = tripData.FuelConsumed?.Value || tripData.fuelConsumption || 6.5;
-        
+
         const score = Math.min(100, Math.round(
-            (avgSpeed / 80) * 50 + 
+            (avgSpeed / 80) * 50 +
             (100 - Math.min(30, maxSpeed - 60)) * 0.5 +
             20
         ));
-        
+
         let rank = 'C';
         if (score >= 90) rank = 'S';
         else if (score >= 80) rank = 'A';
         else if (score >= 65) rank = 'B';
         else if (score >= 50) rank = 'C';
-        
+
         let weather = 'Clear';
         try {
             const startLat = tripData.StartPosition?.Latitude || tripData.StartPosition?.latitude || 50.0755;
@@ -303,7 +319,7 @@ export class TripsService {
         } catch (e) {
             this.logger.warn('Failed to get weather for trip', e);
         }
-        
+
         const feedback = await this.aiService.generateDriverFeedback(weather, score, fuel, 0);
 
         return {
@@ -328,5 +344,36 @@ export class TripsService {
                 feedback,
             }
         };
+    }
+
+    async analyzeAdminGpsDozor(tripData: any) {
+        this.logger.log('Analyzing external GPS Dozor trip for Admin');
+
+        const startTime = tripData.StartTime || tripData.startTime;
+        const finishTime = tripData.FinishTime || tripData.finishTime;
+
+        if (!startTime || !finishTime) {
+            return { feedback: 'Invalid trip data for analysis.', weather: 'N/A' };
+        }
+
+        const start = new Date(startTime);
+        const finish = new Date(finishTime);
+        const durationHours = (finish.getTime() - start.getTime()) / (1000 * 60 * 60);
+
+        const fuel = tripData.FuelConsumed?.Value || tripData.fuelConsumption || 6.5;
+        const ecoEvents = tripData.ecoEventsCount || 0;
+
+        let weather = 'Clear';
+        try {
+            const startLat = tripData.StartPosition?.Latitude || tripData.StartPosition?.latitude || 50.0755;
+            const startLng = tripData.StartPosition?.Longitude || tripData.StartPosition?.longitude || 14.4378;
+            weather = await this.weatherService.getWeatherForTrip(startLat, startLng, start);
+        } catch (e) {
+            this.logger.warn('Failed to get weather for external analysis', e);
+        }
+
+        const feedback = await this.aiService.generateAdminFeedback(weather, fuel, ecoEvents, durationHours);
+
+        return { feedback, weather };
     }
 }
