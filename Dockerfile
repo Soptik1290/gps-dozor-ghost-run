@@ -50,5 +50,5 @@ COPY client/nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 
 # Simple process manager: start Nest backend and Nginx
-CMD service nginx start && node server/dist/main.js
+CMD service nginx start && node server/dist/src/main.js
 
