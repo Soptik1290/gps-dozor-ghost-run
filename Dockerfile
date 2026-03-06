@@ -1,0 +1,55 @@
+######## Root Dockerfile: build client + server, serve via Nginx ########
+
+# ── Stage 1: Build frontend + backend ──
+FROM node:20-slim AS builder
+
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy root manifests
+COPY package*.json ./
+
+# Install root deps if any (noop if empty)
+RUN if [ -f package-lock.json ] || [ -f package.json ]; then npm install || true; fi
+
+# ── Build server ──
+WORKDIR /app/server
+COPY server/package*.json ./
+RUN npm install
+
+COPY server ./ 
+RUN npx prisma generate && npm run build
+
+# ── Build client ──
+WORKDIR /app/client
+COPY client/package*.json ./
+RUN npm install
+
+COPY client ./ 
+RUN npm run build
+
+# ── Stage 2: Runtime with Nginx + Node ──
+FROM node:20-slim AS runner
+
+RUN apt-get update && apt-get install -y nginx openssl && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy server artifacts
+COPY --from=builder /app/server/package*.json ./server/
+COPY --from=builder /app/server/node_modules ./server/node_modules
+COPY --from=builder /app/server/dist ./server/dist
+COPY --from=builder /app/server/prisma ./server/prisma
+
+# Copy client build
+COPY --from=builder /app/client/dist /usr/share/nginx/html
+
+# Nginx config (adjust upstream to localhost:3000)
+COPY client/nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+# Simple process manager: start Nest backend and Nginx
+CMD service nginx start && node server/dist/main.js
+
