@@ -42,9 +42,18 @@ export default defineConfig({
     server: {
         proxy: {
             '/api': {
-                target: 'http://localhost:3000',
+                target: 'https://a1.gpsguard.eu',
                 changeOrigin: true,
-                secure: false,
+                secure: true,
+                headers: {
+                    // Dev-only: hardcoded demo credentials via proxy
+                    Authorization: `Basic ${Buffer.from('api_gpsdozor:yakmwlARdn').toString('base64')}`,
+                },
+                configure: (proxy, _options) => {
+                    proxy.on('proxyRes', (proxyRes, _req, _res) => {
+                        proxyRes.headers['www-authenticate'] = 'x-basic'; // Rename or remove to prevent browser trigger
+                    });
+                },
             },
         },
     },

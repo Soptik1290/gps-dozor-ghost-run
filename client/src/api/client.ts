@@ -54,8 +54,7 @@ export async function nestFetch<T>(
 
     console.log(`[nestFetch] Request: ${endpoint}`, { hasToken: !!auth.token })
 
-    const baseUrl = '/api'
-    const response = await fetch(`${baseUrl}${endpoint}`, {
+    const response = await fetch(`http://localhost:3000${endpoint}`, {
         ...options,
         headers,
     })

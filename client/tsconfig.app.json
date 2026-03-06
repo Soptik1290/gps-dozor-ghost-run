@@ -26,8 +26,10 @@
                 "./src/*"
             ]
         },
-        "types": [],
-        "typeRoots": []
+        "types": [
+            "node",
+            "vite/client"
+        ]
     },
     "include": [
         "src/**/*.ts",

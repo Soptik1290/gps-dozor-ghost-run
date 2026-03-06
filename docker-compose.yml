@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  gps-dozor-server:
+  server:
     build:
       context: ./server
       dockerfile: Dockerfile
@@ -22,5 +22,5 @@ services:
     ports:
       - "8080:80"
     depends_on:
-      - gps-dozor-server
+      - server
     restart: always
