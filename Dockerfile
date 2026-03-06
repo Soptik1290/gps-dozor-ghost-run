@@ -38,11 +38,8 @@ RUN apt-get update && apt-get install -y nginx openssl && rm -rf /var/lib/apt/li
 
 WORKDIR /app
 
-# Copy server artifacts
-COPY --from=builder /app/server/package*.json ./server/
-COPY --from=builder /app/server/node_modules ./server/node_modules
-COPY --from=builder /app/server/dist ./server/dist
-COPY --from=builder /app/server/prisma ./server/prisma
+# Copy full built server app (code + node_modules + dist + prisma)
+COPY --from=builder /app/server ./server
 
 # Copy client build
 COPY --from=builder /app/client/dist /usr/share/nginx/html
