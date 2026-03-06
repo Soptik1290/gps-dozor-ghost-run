@@ -16,17 +16,19 @@ RUN if [ -f package-lock.json ] || [ -f package.json ]; then npm install || true
 # ── Build server ──
 WORKDIR /app/server
 COPY server/package*.json ./
-RUN npm install
+# Ensure devDependencies (TypeScript, Nest CLI, etc.) are installed even if NODE_ENV=production
+RUN npm install --include=dev
 
-COPY server ./ 
+COPY server ./
 RUN npx prisma generate && npm run build
 
 # ── Build client ──
 WORKDIR /app/client
 COPY client/package*.json ./
-RUN npm install
+# Install with devDependencies so type packages like @types/mapbox__point-geometry are available for vue-tsc
+RUN npm install --include=dev
 
-COPY client ./ 
+COPY client ./
 RUN npm run build
 
 # ── Stage 2: Runtime with Nginx + Node ──
